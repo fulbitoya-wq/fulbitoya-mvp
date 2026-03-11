@@ -1,26 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
+/* FulbitoYa! — Charte graphique */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --fulbito-primary: #1A2E4A;
+  --fulbito-accent: #4CAF50;
+  --fulbito-white: #FFFFFF;
+  --fulbito-blue-light: #2C4A72;
+  --fulbito-green-dark: #388E3C;
+  --fulbito-gray-field: #F5F5F5;
+  --fulbito-red: #F44336;
+  --fulbito-yellow: #FFC107;
+  --fulbito-border: #E0E0E0;
+  --background: var(--fulbito-white);
+  --foreground: var(--fulbito-primary);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-fulbito-primary: var(--fulbito-primary);
+  --color-fulbito-accent: var(--fulbito-accent);
+  --color-fulbito-blue-light: var(--fulbito-blue-light);
+  --color-fulbito-green-dark: var(--fulbito-green-dark);
+  --color-fulbito-gray-field: var(--fulbito-gray-field);
+  --color-fulbito-red: var(--fulbito-red);
+  --color-fulbito-yellow: var(--fulbito-yellow);
+  --font-heading: 'Bebas Neue', sans-serif;
+  --font-subheading: 'Montserrat', sans-serif;
+  --font-body: 'Inter', sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
+}
+
+/* Utilidades para títulos según charte */
+.font-heading {
+  font-family: var(--font-heading);
+}
+.font-subheading {
+  font-family: var(--font-subheading);
 }
