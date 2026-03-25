@@ -80,7 +80,12 @@ export async function POST(req: Request) {
 
   const data = Array.isArray(rpcData) ? rpcData[0] : rpcData;
 
-  if (rpcErr || !data || !data.ok) {
+  const ok =
+    data?.ok === true ||
+    data?.ok === "true" ||
+    data?.ok === 1;
+
+  if (rpcErr || !data || !ok) {
     const msg =
       typeof data?.error === "string"
         ? data.error
