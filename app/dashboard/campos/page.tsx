@@ -5,7 +5,10 @@ export default function DashboardCamposPage() {
         Mis campos
       </h1>
       <p className="mt-1 text-[#1A2E4A]/70">
-        Listado por cancha, nuevo campo (tipo 5/7/11, superficie) — en construcción.
+        Los campos se gestionan por complejo.
+      </p>
+      <p className="mt-2 text-[#1A2E4A]/70">
+        Andá a <a className="font-medium text-[var(--fulbito-green)] underline" href="/dashboard/canchas">Mis canchas</a> y usá <b>Ver campos</b>.
       </p>
     </div>
   );

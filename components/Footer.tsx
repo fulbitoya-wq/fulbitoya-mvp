@@ -1,28 +1,47 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export function Footer() {
   return (
-    <footer className="border-t border-[#E0E0E0] bg-white">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <span className="font-heading text-xl text-[#1A2E4A]">
-            FulbitoYa!
-          </span>
-          <div className="flex gap-6 text-sm text-[#1A2E4A]/80">
-            <Link href="/canchas" className="hover:text-[#4CAF50]">
+    <footer className="bg-[var(--fulbito-navy)]">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="flex flex-col items-center gap-6 md:flex-row md:justify-between">
+          <div className="flex flex-col items-center gap-3 md:items-start">
+            <Link href="/" className="flex items-center">
+              <Image
+                src="/images/logo-white.png"
+                alt="FulbitoYa!"
+                width={180}
+                height={50}
+                className="h-12 w-auto object-contain"
+              />
+            </Link>
+            <p className="text-sm text-white/70">
+              © {new Date().getFullYear()} FulbitoYa! Todos los derechos reservados.
+            </p>
+          </div>
+
+          <nav className="flex flex-wrap justify-center gap-6 text-sm">
+            <Link
+              href="/canchas"
+              className="text-white/70 transition-colors hover:text-white"
+            >
               Canchas
             </Link>
-            <Link href="/login" className="hover:text-[#4CAF50]">
+            <Link
+              href="/login"
+              className="text-white/70 transition-colors hover:text-white"
+            >
               Ingresar
             </Link>
-            <Link href="/registro" className="hover:text-[#4CAF50]">
+            <Link
+              href="/registro"
+              className="text-white/70 transition-colors hover:text-white"
+            >
               Registrate
             </Link>
-          </div>
+          </nav>
         </div>
-        <p className="mt-4 text-center text-xs text-[#1A2E4A]/60">
-          Fútbol amateur en Buenos Aires — Reservá y jugá ya.
-        </p>
       </div>
     </footer>
   );

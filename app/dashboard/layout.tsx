@@ -44,6 +44,12 @@ export default function DashboardLayout({
           >
             Reservas recibidas
           </Link>
+          <Link
+            href="/dashboard/invitaciones"
+            className="block rounded-lg px-3 py-2 text-sm hover:bg-[#2C4A72]"
+          >
+            Invitaciones
+          </Link>
         </nav>
       </aside>
       <div className="flex-1 bg-[#F5F5F5]">

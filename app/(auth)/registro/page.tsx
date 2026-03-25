@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { SuccessModal } from "@/components/SuccessModal";
 
 export default function RegistroPage() {
   const [nombre, setNombre] = useState("");
@@ -11,12 +12,15 @@ export default function RegistroPage() {
   const [telefono, setTelefono] = useState("");
   const [rol, setRol] = useState("jugador");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -30,12 +34,12 @@ export default function RegistroPage() {
 
     setLoading(false);
 
-    if (error) {
-      alert("Error: " + error.message);
+    if (signUpError) {
+      setError(signUpError.message);
       return;
     }
 
-    alert("Cuenta creada! Revisá tu email para confirmar.");
+    setShowSuccess(true);
   };
 
   return (
@@ -50,6 +54,11 @@ export default function RegistroPage() {
         </p>
 
         <form onSubmit={handleRegister} className="mt-6 space-y-4">
+          {error && (
+            <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
 
           <input
             type="text"
@@ -127,6 +136,14 @@ export default function RegistroPage() {
           </Link>
         </p>
       </div>
+
+      <SuccessModal
+        open={showSuccess}
+        onClose={() => setShowSuccess(false)}
+        title="¡Cuenta creada!"
+        message="Tu cuenta fue creada correctamente. Si tenés confirmación de email activada, revisá tu correo. Sino, ya podés ingresar."
+        primaryAction={{ label: "Ir a ingresar", href: "/login" }}
+      />
     </div>
   );
 }

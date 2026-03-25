@@ -18,8 +18,18 @@ create table if not exists public.canchas (
   nombre text not null,
   direccion text,
   barrio text,
+  logo_url text,
+  estacionamiento boolean default false,
+  buffet boolean default false,
+  vestuarios boolean default false,
+  provincia_id uuid references public.provincias(id),
+  partido_id uuid references public.partidos(id),
+  localidad_id uuid references public.localidades(id),
+  lat real,
+  lng real,
   descripcion text,
   foto_url text,
+  fondo_url text,
   activa boolean default true,
   created_at timestamptz default now()
 );
@@ -29,8 +39,17 @@ create table if not exists public.campos (
   id uuid default gen_random_uuid() primary key,
   cancha_id uuid references public.canchas(id) on delete cascade,
   nombre text not null,
-  tipo text check (tipo in ('5', '7', '11')),
+  tipo text check (tipo in ('5', '7', '9', '11')),
   superficie text check (superficie in ('cesped_natural', 'cesped_sintetico', 'tierra', 'cemento')),
+  valor_hora numeric(10,2) not null default 0,
+  valor_reserva numeric(10,2) not null default 0,
+  luz boolean default false,
+  camaras boolean default false,
+  minutero boolean default false,
+  marcador_gol boolean default false,
+  foto_url text,
+  -- Opcional (texto libre para el dueño)
+  observaciones text,
   created_at timestamptz default now()
 );
 
@@ -52,6 +71,8 @@ create table if not exists public.reservas (
   disponibilidad_id uuid references public.disponibilidades(id),
   organizador_id uuid references public.usuarios(id),
   monto_total numeric(10,2),
+  mercadopago_payment_id text,
+  mercadopago_preference_id text,
   estado_pago text check (estado_pago in ('pendiente', 'pagado', 'cancelado')) default 'pendiente',
   necesita_jugadores boolean default false,
   jugadores_necesarios int default 0,

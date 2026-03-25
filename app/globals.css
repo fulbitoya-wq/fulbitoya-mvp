@@ -4,24 +4,48 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/* FulbitoYa! — Charte graphique */
+/* FulbitoYa! — Charte graphique (colores oficiales) */
 :root {
-  --fulbito-primary: #1A2E4A;
-  --fulbito-accent: #4CAF50;
-  --fulbito-white: #FFFFFF;
-  --fulbito-blue-light: #2C4A72;
-  --fulbito-green-dark: #388E3C;
-  --fulbito-gray-field: #F5F5F5;
-  --fulbito-red: #F44336;
-  --fulbito-yellow: #FFC107;
+  /* Nombres oficiales chart */
+  --deep-space-blue: #1a2e4a;   /* Navbar, fondos */
+  --medium-jungle: #4caf50;     /* Botones CTA */
+  --white: #ffffff;             /* Fondos claros */
+  --forest-green: #388e3c;      /* Hover botones */
+  --dusk-blue: #2c4a72;         /* Hover cards */
+  --white-smoke: #f5f5f5;       /* Fondos neutros */
+  --cinnabar: #f44336;          /* Turnos ocupados */
+  --amber-gold: #ffc107;        /* Pago pendiente */
+  /* Alias compatibilidad */
+  --fulbito-primary: var(--deep-space-blue);
+  --fulbito-accent: var(--medium-jungle);
+  --fulbito-white: var(--white);
+  --fulbito-blue-light: var(--dusk-blue);
+  --fulbito-green-dark: var(--forest-green);
+  --fulbito-gray-field: var(--white-smoke);
+  --fulbito-red: var(--cinnabar);
+  --fulbito-yellow: var(--amber-gold);
   --fulbito-border: #E0E0E0;
-  --background: var(--fulbito-white);
-  --foreground: var(--fulbito-primary);
+  --background: var(--white);
+  --foreground: var(--deep-space-blue);
+  /* Alias para componentes nuevo diseño (zipnuevo) */
+  --fulbito-navy: var(--deep-space-blue);
+  --fulbito-green: var(--medium-jungle);
+  --fulbito-green-hover: var(--forest-green);
+  --secondary: var(--white-smoke);
+  --muted-foreground: #6b7280;
+  --card: var(--white);
+  --card-foreground: var(--deep-space-blue);
+  --border: var(--fulbito-border);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-secondary: var(--secondary);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
   --color-fulbito-primary: var(--fulbito-primary);
   --color-fulbito-accent: var(--fulbito-accent);
   --color-fulbito-blue-light: var(--fulbito-blue-light);
@@ -30,6 +54,7 @@
   --color-fulbito-red: var(--fulbito-red);
   --color-fulbito-yellow: var(--fulbito-yellow);
   --font-heading: 'Bebas Neue', sans-serif;
+  --font-bebas-neue: 'Bebas Neue', sans-serif;
   --font-subheading: 'Montserrat', sans-serif;
   --font-body: 'Inter', sans-serif;
 }
