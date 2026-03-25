@@ -9,6 +9,12 @@ const appBaseUrl =
   "http://localhost:3000";
 
 export async function POST(req: Request) {
+  console.log("🧪 SUPABASE URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+  console.log(
+    "🧪 SUPABASE ANON KEY PREFIX:",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.slice(0, 20)
+  );
+
   console.log("🚀 API HIT /api/pagos/mercadopago/preferencia");
 
   const authHeader = req.headers.get("authorization");
