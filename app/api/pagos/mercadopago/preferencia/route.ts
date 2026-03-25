@@ -78,10 +78,12 @@ export async function POST(req: Request) {
     }
   );
 
-  if (rpcErr || !rpcData || !rpcData.ok) {
+  const data = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+
+  if (rpcErr || !data || !data.ok) {
     const msg =
-      typeof (rpcData as any)?.error === "string"
-        ? (rpcData as any).error
+      typeof data?.error === "string"
+        ? data.error
         : "Disponibilidad inválida o no disponible.";
 
     return NextResponse.json({ error: msg }, { status: 400 });
@@ -98,7 +100,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const monto = Number((rpcData as any).monto);
+  const monto = Number(data.monto);
   if (!Number.isFinite(monto) || monto <= 0) {
     return NextResponse.json(
       { error: "Monto de seña inválido." },
