@@ -78,20 +78,35 @@ export async function POST(req: Request) {
     }
   );
 
-  const data = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+  console.log("🧪 RPC ERROR:", rpcErr);
+  console.log("🧪 RPC RAW:", JSON.stringify(rpcData, null, 2));
+
+  const dataRaw = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+
+  console.log("🧪 DATA RAW:", JSON.stringify(dataRaw, null, 2));
+  console.log("🧪 TYPE OF OK:", typeof dataRaw?.ok);
+  console.log("🧪 VALUE OF OK:", dataRaw?.ok);
 
   const ok =
-    data?.ok === true ||
-    data?.ok === "true" ||
-    data?.ok === 1;
+    dataRaw?.ok === true ||
+    dataRaw?.ok === "true" ||
+    dataRaw?.ok === 1;
 
-  if (rpcErr || !data || !ok) {
-    const msg =
-      typeof data?.error === "string"
-        ? data.error
-        : "Disponibilidad inválida o no disponible.";
+  console.log("🧪 OK NORMALIZED:", ok);
 
-    return NextResponse.json({ error: msg }, { status: 400 });
+  if (rpcErr || !dataRaw || !ok) {
+    return NextResponse.json(
+      {
+        debug: {
+          rpcErr,
+          rpcData,
+          dataRaw,
+          ok,
+        },
+        error: "Disponibilidad inválida o no disponible.",
+      },
+      { status: 400 }
+    );
   }
 
   const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
@@ -105,7 +120,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const monto = Number(data.monto);
+  const monto = Number(dataRaw.monto);
   if (!Number.isFinite(monto) || monto <= 0) {
     return NextResponse.json(
       { error: "Monto de seña inválido." },
