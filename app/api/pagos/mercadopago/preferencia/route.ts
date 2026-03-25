@@ -9,8 +9,13 @@ const appBaseUrl =
   "http://localhost:3000";
 
 export async function POST(req: Request) {
+  console.log("🚀 API HIT /api/pagos/mercadopago/preferencia");
+
   const authHeader = req.headers.get("authorization");
+  console.log("🧪 AUTH HEADER:", authHeader);
+
   const token = authHeader?.replace(/^Bearer\s+/i, "");
+  console.log("🧪 TOKEN:", token);
   if (!token) {
     return NextResponse.json(
       { error: "Debes iniciar sesión para reservar" },
@@ -43,7 +48,9 @@ export async function POST(req: Request) {
   let body: { disponibilidadId?: string };
   try {
     body = await req.json();
-  } catch {
+    console.log("🧪 BODY:", body);
+  } catch (e) {
+    console.log("❌ ERROR PARSE BODY:", e);
     return NextResponse.json(
       { error: "Cuerpo inválido." },
       { status: 400 }
