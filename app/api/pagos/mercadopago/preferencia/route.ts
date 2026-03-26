@@ -84,6 +84,20 @@ export async function POST(req: Request) {
     );
   }
 
+  console.log("🧪 TEST SUPABASE CONNECTION START");
+
+  const testQuery = await admin
+    .from("disponibilidades")
+    .select("*")
+    .limit(1);
+
+  console.log("🧪 TEST RESULT:", {
+    data: testQuery.data,
+    error: testQuery.error,
+  });
+
+  console.log("🧪 TEST SUPABASE CONNECTION END");
+
   const { data: rpcData, error: rpcErr } = await admin.rpc(
     "get_sena_para_disponibilidad",
     {
