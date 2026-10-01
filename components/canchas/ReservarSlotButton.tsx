@@ -27,6 +27,8 @@ export default function ReservarSlotButton({
       } = await supabase.auth.getUser();
       if (!user?.id) {
         if (typeof window !== "undefined") {
+          const returnTo = window.location.pathname + window.location.search + window.location.hash;
+          localStorage.setItem("authRedirectAfterLogin", returnTo);
           localStorage.setItem(
             "pendingReservation",
             JSON.stringify({
@@ -45,6 +47,8 @@ export default function ReservarSlotButton({
       } = await supabase.auth.getSession();
       if (!session?.access_token) {
         if (typeof window !== "undefined") {
+          const returnTo = window.location.pathname + window.location.search + window.location.hash;
+          localStorage.setItem("authRedirectAfterLogin", returnTo);
           const next = encodeURIComponent(window.location.pathname + window.location.search);
           window.location.href = `/login?next=${next}&intent=reservar`;
         }
@@ -64,6 +68,8 @@ export default function ReservarSlotButton({
       if (!res.ok) {
         if (res.status === 401) {
           if (typeof window !== "undefined") {
+            const returnTo = window.location.pathname + window.location.search + window.location.hash;
+            localStorage.setItem("authRedirectAfterLogin", returnTo);
             const next = encodeURIComponent(window.location.pathname + window.location.search);
             window.location.href = `/login?next=${next}&intent=reservar`;
           }

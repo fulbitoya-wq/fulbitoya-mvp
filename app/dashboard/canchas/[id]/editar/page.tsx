@@ -9,6 +9,8 @@ import {
   type Cancha,
 } from "@/lib/canchas";
 import { supabase } from "@/lib/supabase";
+import { PlacesAutocompleteInput } from "@/components/maps/PlacesAutocompleteInput";
+import { AddressPreviewMap } from "@/components/maps/AddressPreviewMap";
 
 const BUCKET_LOGOS = "predio-logos";
 const BUCKET_FONDOS = "predio-fondos";
@@ -26,6 +28,11 @@ export default function EditarCanchaPage() {
 
   const [cancha, setCancha] = useState<Cancha | null>(null);
   const [nombre, setNombre] = useState("");
+  const [direccion, setDireccion] = useState("");
+  const [barrio, setBarrio] = useState("");
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [placeId, setPlaceId] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [fondoPreview, setFondoPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -49,6 +56,11 @@ export default function EditarCanchaPage() {
 
       setCancha(row);
       setNombre(row.nombre ?? "");
+      setDireccion(row.direccion ?? "");
+      setBarrio(row.barrio ?? "");
+      setLat(row.lat);
+      setLng(row.lng);
+      setPlaceId(row.place_id ?? null);
       setLogoPreview(row.logo_url ?? null);
       setFondoPreview(row.fondo_url ?? null);
       setLoading(false);
@@ -144,6 +156,11 @@ export default function EditarCanchaPage() {
 
     const { ok, error: updErr } = await actualizarCanchaDelOwner(canchaId, {
       nombre: nombre.trim() || cancha.nombre,
+      direccion: direccion.trim() || null,
+      barrio: barrio.trim() || null,
+      lat,
+      lng,
+      place_id: placeId,
       logo_url: nextLogoUrl ?? null,
       fondo_url: nextFondoUrl ?? null,
     });
@@ -198,6 +215,37 @@ export default function EditarCanchaPage() {
             onChange={(e) => setNombre(e.target.value)}
             className="mt-1 w-full rounded-lg border border-[#E0E0E0] px-4 py-2"
             required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-[#1A2E4A]">
+            Dirección (Google Maps)
+          </label>
+          <PlacesAutocompleteInput
+            value={direccion}
+            onChange={setDireccion}
+            placeholder="Buscá y elegí la dirección"
+            onPlaceSelected={(place) => {
+              setDireccion(place.formattedAddress);
+              setLat(place.lat);
+              setLng(place.lng);
+              setPlaceId(place.placeId);
+              if (place.barrio) setBarrio(place.barrio);
+            }}
+          />
+          {lat !== null && lng !== null && <AddressPreviewMap lat={lat} lng={lng} />}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-[#1A2E4A]">
+            Barrio / zona
+          </label>
+          <input
+            type="text"
+            value={barrio}
+            onChange={(e) => setBarrio(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-[#E0E0E0] px-4 py-2"
           />
         </div>
 

@@ -1,0 +1,60 @@
+/* PorLaCancha design tokens. Source of truth in TypeScript: shared/design/*.ts */
+:root {
+  --plc-navy: #002b62;
+  --plc-navy-dark: #001b44;
+  --plc-surface: #07366d;
+  --plc-surface-hover: #0b427f;
+  --plc-surface-elevated: #0d4a8c;
+  --plc-white: #f7f5ef;
+  --plc-text-secondary: #b8c4d6;
+  --plc-sky: #8bc9eb;
+  --plc-gold: #d9a928;
+  --plc-gold-light: #f3d477;
+  --plc-gold-dark: #a97812;
+  --plc-success: #22c55e;
+  --plc-danger: #ef4444;
+  --plc-warning: #f59e0b;
+  --plc-border: rgba(255, 255, 255, 0.1);
+  --plc-border-strong: rgba(255, 255, 255, 0.2);
+
+  --plc-status-open: rgba(34, 197, 94, 0.16);
+  --plc-status-urgent: rgba(217, 169, 40, 0.18);
+  --plc-status-complete: rgba(139, 201, 235, 0.18);
+  --plc-status-pending: rgba(184, 196, 214, 0.16);
+  --plc-status-won: rgba(217, 169, 40, 0.22);
+  --plc-status-lost: rgba(184, 196, 214, 0.12);
+  --plc-status-cancelled: rgba(239, 68, 68, 0.16);
+  --plc-status-payment: rgba(245, 158, 11, 0.18);
+
+  --plc-radius-sm: 10px;
+  --plc-radius-md: 16px;
+  --plc-radius-lg: 20px;
+  --plc-radius-xl: 24px;
+  --plc-radius-xxl: 32px;
+  --plc-radius-pill: 999px;
+
+  --plc-space-4: 4px;
+  --plc-space-8: 8px;
+  --plc-space-12: 12px;
+  --plc-space-16: 16px;
+  --plc-space-20: 20px;
+  --plc-space-24: 24px;
+  --plc-space-32: 32px;
+  --plc-space-40: 40px;
+  --plc-space-48: 48px;
+
+  --plc-shadow-sm: 0 2px 8px rgba(0, 27, 68, 0.45);
+  --plc-shadow-md: 0 8px 20px rgba(0, 27, 68, 0.42);
+  --plc-shadow-lg: 0 16px 40px rgba(0, 27, 68, 0.5);
+  --plc-gold-glow: 0 8px 28px rgba(217, 169, 40, 0.38);
+
+  --plc-gradient-hero: linear-gradient(135deg, #001b44 0%, #002b62 55%, #07366d 100%);
+  --plc-gradient-gold: linear-gradient(135deg, #f3d477 0%, #d9a928 100%);
+
+  --plc-font-ui: var(--font-manrope), "Manrope", system-ui, sans-serif;
+  --plc-font-num: var(--font-teko), "Teko", Impact, sans-serif;
+
+  --plc-bp-tablet: 768px;
+  --plc-bp-desktop: 1024px;
+  --plc-bp-wide: 1280px;
+}

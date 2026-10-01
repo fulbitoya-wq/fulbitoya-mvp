@@ -72,3 +72,7 @@ body {
 .font-subheading {
   font-family: var(--font-subheading);
 }
+
+.pac-container {
+  z-index: 10000 !important;
+}

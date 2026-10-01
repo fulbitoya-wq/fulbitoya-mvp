@@ -50,6 +50,12 @@ export default function DashboardLayout({
           >
             Invitaciones
           </Link>
+          <Link
+            href="/dashboard/desafios"
+            className="block rounded-lg px-3 py-2 text-sm hover:bg-[#2C4A72]"
+          >
+            Desafíos
+          </Link>
         </nav>
       </aside>
       <div className="flex-1 bg-[#F5F5F5]">

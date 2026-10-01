@@ -29,6 +29,12 @@ export function Footer() {
               Canchas
             </Link>
             <Link
+              href="/desafios"
+              className="text-white/70 transition-colors hover:text-white"
+            >
+              Desafíos
+            </Link>
+            <Link
               href="/login"
               className="text-white/70 transition-colors hover:text-white"
             >

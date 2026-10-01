@@ -14,12 +14,16 @@ export const VERIFICATION_STATUS_LABELS: Record<VerificationStatus, string> = {
   rejected: "Rechazado",
 };
 
+export type OrigenRegistro = "fulbitoya" | "porlacancha";
+
 export interface Usuario {
   id: string;
   email: string;
   nombre: string | null;
   telefono: string | null;
   rol: "owner" | "jugador";
+  origen_registro: OrigenRegistro | null;
+  avatar_url: string | null;
   verification_level: VerificationLevel;
   created_at: string;
 }
@@ -83,3 +87,60 @@ export interface EquipoConMiembros extends Equipo {
 
 /** @deprecated Use EquipoInvitacion (equipo_invitaciones table). Kept for type compatibility. */
 export type TeamInvitation = EquipoInvitacion;
+
+export type MatchTipo = "f5" | "f7" | "f9" | "f11";
+export type MatchEstado = "pending" | "completo" | "confirmado" | "cancelado";
+export type MatchVisibilidad = "privado" | "publico";
+export type MatchPlayerEstado = "invitado" | "confirmado" | "rechazado";
+export type MatchPlayerOrigen = "invitacion" | "solicitud";
+
+export interface Match {
+  id: string;
+  organizer_id: string;
+  tipo: MatchTipo;
+  provincia_id: string;
+  partido_id: string;
+  localidad_id: string;
+  direccion: string | null;
+  place_id: string | null;
+  lat: number | null;
+  lng: number | null;
+  fecha: string;
+  hora_inicio: string;
+  duracion_min: number;
+  estado: MatchEstado;
+  visibilidad: MatchVisibilidad;
+  created_at: string;
+}
+
+export type DesafioEstado = "abierto" | "completo" | "cancelado" | "finalizado";
+
+export interface Desafio {
+  id: string;
+  owner_id: string;
+  cancha_id: string | null;
+  titulo: string;
+  tipo: MatchTipo;
+  premio: number;
+  direccion: string;
+  barrio: string | null;
+  place_id: string | null;
+  lat: number;
+  lng: number;
+  fecha: string;
+  hora_inicio: string;
+  duracion_min: number;
+  descripcion: string | null;
+  estado: DesafioEstado;
+  created_at: string;
+}
+
+export interface MatchPlayer {
+  id: string;
+  match_id: string;
+  user_id: string | null;
+  invited_email: string | null;
+  origen: MatchPlayerOrigen;
+  estado: MatchPlayerEstado;
+  created_at: string;
+}

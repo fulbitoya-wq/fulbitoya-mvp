@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { getUsuario, getVerification } from "@/lib/verification";
 import { getEquiposDelUsuario } from "@/lib/equipos";
 import { getTeamInvitationsForUser } from "@/lib/equipos";
+import { getMyMatches } from "@/lib/matches";
 import type { Usuario, Verification } from "@/lib/types";
 import { VerificationBanner } from "@/components/jugador/VerificationBanner";
 import { DashboardMenu } from "@/components/jugador/DashboardMenu";
@@ -16,6 +17,7 @@ export default function JugadorPage() {
   const [verification, setVerification] = useState<Verification | null>(null);
   const [equiposCount, setEquiposCount] = useState(0);
   const [invitacionesCount, setInvitacionesCount] = useState(0);
+  const [matchesCount, setMatchesCount] = useState(0);
 
   useEffect(() => {
     const load = async () => {
@@ -25,16 +27,18 @@ export default function JugadorPage() {
       if (user.user_metadata?.nombre) setNombre(user.user_metadata.nombre);
       else if (user.email) setNombre(user.email.split("@")[0]);
 
-      const [u, v, equipos, invitaciones] = await Promise.all([
+      const [u, v, equipos, invitaciones, matches] = await Promise.all([
         getUsuario(user.id),
         getVerification(user.id),
         getEquiposDelUsuario(user.id),
         getTeamInvitationsForUser(user.id),
+        getMyMatches(user.id),
       ]);
       setUsuario(u);
       setVerification(v);
       setEquiposCount(equipos.length);
       setInvitacionesCount(invitaciones.length);
+      setMatchesCount(matches.length);
     };
     load();
   }, []);
@@ -85,6 +89,15 @@ export default function JugadorPage() {
           </p>
         </Link>
         <Link
+          href="/jugador/matches"
+          className="rounded-xl border border-[#E0E0E0] bg-white p-6 shadow-sm transition hover:border-[var(--fulbito-green)] hover:shadow-md"
+        >
+          <h3 className="font-subheading text-lg font-semibold text-[#1A2E4A]">Mis matches</h3>
+          <p className="mt-1 text-sm text-[#1A2E4A]/70">
+            {matchesCount === 0 ? "Aún no tenés matches." : `${matchesCount} match(es).`}
+          </p>
+        </Link>
+        <Link
           href="/dashboard/invitaciones"
           className="rounded-xl border border-[#E0E0E0] bg-white p-6 shadow-sm transition hover:border-[var(--fulbito-green)] hover:shadow-md"
         >
@@ -101,6 +114,13 @@ export default function JugadorPage() {
           <p className="mt-1 text-sm text-[#1A2E4A]/70">
             {isUnverified ? "Cuenta no verificada" : "Estado de verificación"}
           </p>
+        </Link>
+        <Link
+          href="/jugador/matches/crear"
+          className="rounded-xl border border-[#E0E0E0] bg-white p-6 shadow-sm transition hover:border-[var(--fulbito-green)] hover:shadow-md"
+        >
+          <h3 className="font-subheading text-lg font-semibold text-[#1A2E4A]">Crear match</h3>
+          <p className="mt-1 text-sm text-[#1A2E4A]/70">Armá un nuevo match e invitá jugadores.</p>
         </Link>
       </div>
 

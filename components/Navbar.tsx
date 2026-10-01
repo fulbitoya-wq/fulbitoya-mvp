@@ -62,6 +62,12 @@ export function Navbar() {
             >
               Canchas
             </Link>
+            <Link
+              href="/desafios"
+              className="text-sm font-medium text-white/90 transition hover:text-white"
+            >
+              Desafíos
+            </Link>
 
             {loadingAuth ? null : isLoggedIn ? (
               <>

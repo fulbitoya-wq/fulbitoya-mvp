@@ -2,11 +2,14 @@ import { HeroSection } from "@/components/HeroSection";
 import { CanchasGrid } from "@/components/CanchasGrid";
 import { HowItWorks } from "@/components/HowItWorks";
 import { OwnersCTA } from "@/components/OwnersCTA";
+import { PublicMatchesSection } from "@/components/PublicMatchesSection";
+import { PublicDesafiosTeaser } from "@/components/PublicDesafiosTeaser";
 import Image from "next/image";
 import Link from "next/link";
 import { Car, MapPin, Shirt, Star, UtensilsCrossed } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { buscarCanchasConDisponibilidad, type CanchaDisponibilidadCard } from "@/lib/canchas";
+import { getPublicMatches } from "@/lib/matches";
 
 function tipoToTexto(tipo: string | null): string {
   const map: Record<string, string> = { "5": "Fútbol 5", "7": "Fútbol 7", "9": "Fútbol 9", "11": "Fútbol 11" };
@@ -51,6 +54,7 @@ export default async function Home({
   const shouldShowResults = shouldSearchByLocation || shouldSearchNearby;
 
   let cards: CanchaDisponibilidadCard[] = [];
+  const publicMatches = await getPublicMatches(6);
   let nearbyLevel: "localidad" | "partido" | "provincia" | null = null;
   if (shouldSearchNearby && fecha) {
     nearbyLevel = "localidad";
@@ -230,6 +234,8 @@ export default async function Home({
       ) : (
         <CanchasGrid />
       )}
+      <PublicDesafiosTeaser />
+      <PublicMatchesSection matches={publicMatches} />
       <HowItWorks />
       <OwnersCTA />
     </main>

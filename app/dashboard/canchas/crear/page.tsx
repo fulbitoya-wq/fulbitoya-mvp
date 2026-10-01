@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { crearCancha } from "@/lib/canchas";
 import { getLocalidadesByPartido, getPartidosByProvincia, getProvincias, type Localidad, type Partido, type Provincia } from "@/lib/ubicaciones";
 import { supabase } from "@/lib/supabase";
+import { PlacesAutocompleteInput } from "@/components/maps/PlacesAutocompleteInput";
+import { AddressPreviewMap } from "@/components/maps/AddressPreviewMap";
 
 const BUCKET_LOGOS = "predio-logos";
 const MAX_LOGO_FILE_MB = 2;
@@ -41,6 +43,8 @@ export default function CrearCanchaPage() {
 
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
+  const [placeId, setPlaceId] = useState<string | null>(null);
+  const [pinFromGoogle, setPinFromGoogle] = useState(false);
 
   const [loadingUbicaciones, setLoadingUbicaciones] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -100,11 +104,11 @@ export default function CrearCanchaPage() {
   }, []);
 
   useEffect(() => {
-    // Reset coordinates when locality changes (fresh selection)
+    if (pinFromGoogle) return;
     const loc = localidades.find((l) => l.id === localidadId);
     setLat(loc?.lat ?? null);
     setLng(loc?.lng ?? null);
-  }, [localidadId, localidades]);
+  }, [localidadId, localidades, pinFromGoogle]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,6 +171,7 @@ export default function CrearCanchaPage() {
       localidad_id: localidadId || null,
       lat,
       lng,
+      place_id: placeId,
     });
 
     setLoading(false);
@@ -212,16 +217,26 @@ export default function CrearCanchaPage() {
 
         <div>
           <label htmlFor="direccion" className="block text-sm font-medium text-[#1A2E4A]">
-            Dirección (opcional)
+            Dirección (Google Maps)
           </label>
-          <input
+          <PlacesAutocompleteInput
             id="direccion"
-            type="text"
             value={direccion}
-            onChange={(e) => setDireccion(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-[#E0E0E0] px-4 py-2 focus:border-[var(--fulbito-green)] focus:outline-none focus:ring-1 focus:ring-[var(--fulbito-green)]"
-            placeholder="Ej. Av. Siempre Viva 123"
+            onChange={setDireccion}
+            placeholder="Buscá la dirección del predio"
+            onPlaceSelected={(place) => {
+              setDireccion(place.formattedAddress);
+              setLat(place.lat);
+              setLng(place.lng);
+              setPlaceId(place.placeId);
+              setPinFromGoogle(true);
+              if (place.barrio) setBarrio(place.barrio);
+            }}
           />
+          {pinFromGoogle && (
+            <p className="mt-1 text-xs text-[var(--fulbito-green)]">Pin de Google Maps guardado.</p>
+          )}
+          {lat !== null && lng !== null && <AddressPreviewMap lat={lat} lng={lng} />}
         </div>
 
         <div>

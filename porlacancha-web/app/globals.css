@@ -1,0 +1,147 @@
+@import "tailwindcss";
+@import "../../shared/design/tokens.css";
+
+:root {
+  --background: var(--plc-navy);
+  --foreground: var(--plc-white);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-display: var(--font-teko);
+  --font-body: var(--font-manrope);
+
+  --color-plc-navy: var(--plc-navy);
+  --color-plc-navy-dark: var(--plc-navy-dark);
+  --color-plc-surface: var(--plc-surface);
+  --color-plc-surface-hover: var(--plc-surface-hover);
+  --color-plc-surface-elevated: var(--plc-surface-elevated);
+  --color-plc-white: var(--plc-white);
+  --color-plc-text-secondary: var(--plc-text-secondary);
+  --color-plc-sky: var(--plc-sky);
+  --color-plc-gold: var(--plc-gold);
+  --color-plc-gold-light: var(--plc-gold-light);
+  --color-plc-gold-dark: var(--plc-gold-dark);
+  --color-plc-success: var(--plc-success);
+  --color-plc-danger: var(--plc-danger);
+  --color-plc-warning: var(--plc-warning);
+
+  --radius-plc-sm: var(--plc-radius-sm);
+  --radius-plc-md: var(--plc-radius-md);
+  --radius-plc-lg: var(--plc-radius-lg);
+  --radius-plc-xl: var(--plc-radius-xl);
+  --radius-plc-xxl: var(--plc-radius-xxl);
+  --radius-plc-pill: var(--plc-radius-pill);
+
+  --shadow-plc-sm: var(--plc-shadow-sm);
+  --shadow-plc-md: var(--plc-shadow-md);
+  --shadow-plc-lg: var(--plc-shadow-lg);
+  --shadow-plc-gold-glow: var(--plc-gold-glow);
+}
+
+html {
+  background: var(--plc-navy-dark);
+}
+
+body {
+  background: var(--plc-gradient-hero);
+  color: var(--plc-white);
+  font-family: var(--font-body), system-ui, sans-serif;
+  min-height: 100dvh;
+}
+
+.font-display {
+  font-family: var(--font-display), Impact, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.btn-gold {
+  display: block;
+  width: 100%;
+  border-radius: var(--plc-radius-md);
+  background: var(--plc-gradient-gold);
+  padding: 0.75rem 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--plc-navy-dark);
+  box-shadow: var(--plc-gold-glow);
+}
+
+.btn-gold:disabled {
+  opacity: 0.6;
+}
+
+.btn-sky {
+  display: block;
+  width: 100%;
+  border-radius: var(--plc-radius-md);
+  background: var(--plc-sky);
+  padding: 0.75rem 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--plc-navy-dark);
+}
+
+.field-plc {
+  width: 100%;
+  border-radius: var(--plc-radius-md);
+  background: var(--plc-navy-dark);
+  padding: 0.75rem 1rem;
+  color: var(--plc-white);
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--plc-border);
+}
+
+.field-plc:focus {
+  box-shadow: inset 0 0 0 1px var(--plc-gold);
+}
+
+.card-plc {
+  border-radius: var(--plc-radius-xl);
+  background: var(--plc-surface);
+  box-shadow: var(--plc-shadow-sm);
+}
+
+.prose-legal h2 {
+  font-family: var(--font-display), Impact, sans-serif;
+  font-size: 1.6rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--plc-gold);
+}
+
+.prose-legal p,
+.prose-legal li {
+  color: var(--plc-white);
+  line-height: 1.55;
+  margin-bottom: 0.75rem;
+}
+
+.prose-legal ul {
+  list-style: disc;
+  padding-left: 1.2rem;
+}
+
+.pitch-lines {
+  background-image:
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 46%,
+      rgba(139, 201, 235, 0.08) 46%,
+      rgba(139, 201, 235, 0.08) 47%,
+      transparent 47%
+    ),
+    linear-gradient(
+      to right,
+      transparent 0,
+      transparent 8%,
+      rgba(217, 169, 40, 0.06) 8%,
+      rgba(217, 169, 40, 0.06) 8.4%,
+      transparent 8.4%
+    );
+}

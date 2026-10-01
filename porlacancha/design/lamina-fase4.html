@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PorLaCancha — Lámina UX Explorar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Teko:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy: #002B62;
+      --navy-dark: #001B44;
+      --card: #07366D;
+      --hover: #0B427F;
+      --elev: #0D4A8C;
+      --white: #F7F5EF;
+      --muted: #B8C4D6;
+      --sky: #8BC9EB;
+      --gold: #D9A928;
+      --gold-l: #F3D477;
+      --gold-d: #A97812;
+      --ok: #22C55E;
+      --warn: #F59E0B;
+      --err: #EF4444;
+      --border: rgba(255,255,255,0.10);
+      --border-2: rgba(255,255,255,0.12);
+      --border-s: rgba(255,255,255,0.20);
+      --sky-b: rgba(139,201,235,0.35);
+      --ui: "Manrope", system-ui, sans-serif;
+      --num: "Teko", Impact, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--ui);
+      background: var(--navy);
+      color: var(--white);
+      min-height: 100vh;
+    }
+    .board {
+      min-width: 1680px;
+      padding: 36px 40px 48px;
+    }
+    .phones {
+      display: flex;
+      align-items: flex-start;
+      gap: 28px;
+    }
+    .col { display: flex; flex-direction: column; align-items: center; }
+    .caption {
+      margin-top: 18px;
+      width: 280px;
+      text-align: left;
+    }
+    .caption b {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: var(--gold);
+      margin-bottom: 4px;
+    }
+    .caption span { font-size: 12px; color: var(--muted); line-height: 1.35; }
+    .ds {
+      width: 360px;
+      flex-shrink: 0;
+      padding-top: 8px;
+    }
+    .ds h2 {
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      color: var(--gold);
+      margin: 22px 0 12px;
+    }
+    .ds h2:first-child { margin-top: 0; }
+    .measure { position: relative; display: inline-block; }
+    .dim {
+      position: absolute;
+      font-size: 9px;
+      color: #ff4d8d;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      pointer-events: none;
+    }
+    .phone-frame {
+      width: 280px;
+      height: 606px;
+      background: #0a0a0c;
+      border-radius: 38px;
+      padding: 8px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+    }
+    .phone {
+      width: 264px;
+      height: 590px;
+      border-radius: 32px;
+      overflow: hidden;
+      background: var(--navy-dark);
+      position: relative;
+    }
+    .status {
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px 0;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--white);
+    }
+    .island {
+      position: absolute; top: 7px; left: 50%; transform: translateX(-50%);
+      width: 72px; height: 14px; background: #000; border-radius: 10px; z-index: 5;
+    }
+    .header {
+      height: 78px;
+      background: linear-gradient(135deg, #001B44 0%, #002B62 55%, #07366D 100%);
+      position: relative;
+      padding: 4px 12px 8px;
+    }
+    .header::before {
+      content: "";
+      position: absolute; left: 0; top: 8px; bottom: 8px; width: 6px;
+      background: linear-gradient(180deg, transparent, var(--sky), transparent);
+      border-radius: 0 8px 8px 0;
+      opacity: 0.55;
+    }
+    .header-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding-top: 10px;
+    }
+    .brand { text-align: center; flex: 1; }
+    .stars { color: var(--gold); font-size: 7px; letter-spacing: 3px; line-height: 1; }
+    .wordmark { font-size: 15px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+    .wordmark .g { color: var(--gold); }
+    .tag { font-size: 8px; font-style: italic; color: var(--muted); }
+    .caba {
+      height: 26px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: var(--card);
+      border: 1px solid var(--sky-b);
+      display: flex; align-items: center; gap: 4px;
+      font-size: 9px; font-weight: 700; color: var(--white);
+      flex-shrink: 0;
+    }
+    .seg {
+      margin: 8px 11px 0;
+      height: 27px;
+      border-radius: 999px;
+      background: var(--navy);
+      border: 1px solid var(--border);
+      display: flex; padding: 2px;
+    }
+    .seg button {
+      flex: 1; border: 0; background: transparent; color: var(--gold);
+      font: 700 10px var(--ui); border-radius: 999px; cursor: default;
+    }
+    .seg button.on { background: var(--sky); color: var(--navy-dark); }
+    .filters {
+      display: flex; gap: 5px; padding: 7px 11px 0; overflow: hidden;
+    }
+    .chip {
+      height: 22px; padding: 0 8px; border-radius: 999px;
+      background: var(--card); border: 1px solid var(--border-2);
+      color: var(--white); font: 700 8px var(--ui); display: flex; align-items: center;
+      white-space: nowrap;
+    }
+    .chip.on {
+      background: linear-gradient(135deg, var(--gold-l), var(--gold));
+      border-color: transparent; color: var(--navy-dark);
+    }
+    .row2 {
+      display: flex; justify-content: space-between; padding: 6px 11px 8px; gap: 8px;
+    }
+    .dd, .filt {
+      height: 28px; border-radius: 14px; background: var(--card);
+      border: 1px solid var(--border); font: 600 9px var(--ui); color: var(--white);
+      display: flex; align-items: center; padding: 0 10px; gap: 4px;
+    }
+    .list { padding: 0 11px; display: flex; flex-direction: column; gap: 8px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      min-height: 108px;
+    }
+    .card.sm { min-height: 92px; }
+    .thumb {
+      width: 52px; flex-shrink: 0;
+      background:
+        linear-gradient(180deg, rgba(0,27,68,0.25), rgba(0,27,68,0.45)),
+        repeating-linear-gradient(90deg, #0d5c32 0 8px, #0a4a28 8px 16px);
+      position: relative;
+    }
+    .thumb::after {
+      content: "";
+      position: absolute; inset: 10px 8px;
+      border: 1px solid rgba(247,245,239,0.35); border-radius: 2px;
+    }
+    .body { flex: 1; padding: 7px 8px 6px; position: relative; min-width: 0; }
+    .st-row { display: flex; justify-content: space-between; align-items: flex-start; }
+    .st {
+      display: inline-flex; align-items: center; gap: 4px;
+      height: 16px; padding: 0 7px; border-radius: 999px;
+      font: 700 7px var(--ui); text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .st.open { background: rgba(34,197,94,0.16); color: var(--white); }
+    .st.urgent { background: rgba(217,169,40,0.18); color: var(--gold-l); }
+    .st.full { background: rgba(139,201,235,0.18); color: var(--sky); }
+    .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ok); }
+    .heart { color: var(--muted); }
+    .mid { display: flex; gap: 8px; margin-top: 2px; }
+    .when { min-width: 44px; }
+    .dia { font: 800 8px var(--ui); letter-spacing: 0.06em; color: var(--white); }
+    .hora { font: 700 26px/0.9 var(--num); color: var(--white); }
+    .copy { flex: 1; min-width: 0; }
+    .mod { font: 600 9px var(--ui); color: var(--white); }
+    .prize { font: 700 20px/0.95 var(--num); color: var(--gold); }
+    .loc { display: flex; align-items: center; gap: 4px; margin-top: 2px; font: 600 8px var(--ui); color: var(--white); }
+    .sub { font: 400 7.5px var(--ui); color: var(--sky); margin-left: 12px; }
+    .slots { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+    .avs { display: flex; align-items: center; gap: 5px; }
+    .av { width: 14px; height: 14px; border-radius: 50%; background: var(--elev); border: 1px solid var(--gold); }
+    .av.empty { background: transparent; border: 1px dashed var(--muted); }
+    .cupo { font: 700 8px var(--ui); color: var(--muted); }
+    .fmt { font: 800 8px var(--ui); color: var(--white); }
+    .pay {
+      margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--border);
+      font: 400 7.5px var(--ui); color: var(--muted);
+    }
+    .pay b { color: var(--white); font-weight: 800; }
+    .nav {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      height: 56px; padding-bottom: 8px;
+      background: linear-gradient(#002B62, #001B44);
+      border-top: 1px solid var(--border);
+      display: flex; align-items: flex-end; justify-content: space-around;
+    }
+    .tab {
+      width: 48px; height: 40px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 2px;
+      font: 700 7px var(--ui); color: var(--muted);
+    }
+    .tab.on { color: var(--gold); }
+    .fab {
+      width: 42px; height: 42px; margin-bottom: 10px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold-l), var(--gold));
+      color: var(--navy-dark); font: 700 22px/42px var(--ui); text-align: center;
+      box-shadow: 0 8px 18px rgba(217,169,40,0.35);
+    }
+    .map-wrap { position: relative; height: 318px; margin: 6px 0 0; background: #071a33; overflow: hidden; }
+    .map-label { position: absolute; font: 800 8px var(--ui); color: rgba(139,201,235,0.55); letter-spacing: 0.12em; }
+    .street { position: absolute; background: rgba(139,201,235,0.12); }
+    .me {
+      position: absolute; left: 118px; top: 150px; width: 28px; height: 28px;
+      border-radius: 50%; background: rgba(139,201,235,0.22);
+    }
+    .me i {
+      position: absolute; left: 10px; top: 10px; width: 8px; height: 8px;
+      border-radius: 50%; background: var(--sky);
+    }
+    .pin {
+      position: absolute; transform: translate(-50%, -100%);
+      background: var(--sky); color: var(--navy-dark);
+      font: 800 8px var(--ui); padding: 3px 7px; border-radius: 999px;
+    }
+    .pin::after {
+      content: ""; position: absolute; left: 50%; bottom: -4px;
+      transform: translateX(-50%); width: 6px; height: 6px; border-radius: 50%; background: var(--sky);
+    }
+    .pin.sel {
+      background: linear-gradient(135deg, var(--gold-l), var(--gold));
+      font-size: 10px; padding: 5px 9px;
+      box-shadow: 0 0 16px rgba(217,169,40,0.45);
+    }
+    .pin.sel::after { background: var(--gold); }
+    .float {
+      position: absolute; left: 8px; right: 8px; bottom: 62px;
+      height: 88px; background: var(--card); border-radius: 14px;
+      border: 1px solid var(--border); display: flex; overflow: hidden;
+    }
+    .float .x { position: absolute; right: 6px; top: 4px; color: var(--muted); font-size: 10px; }
+    .detail { height: 100%; overflow: hidden; background: var(--navy-dark); }
+    .hero {
+      height: 148px;
+      background:
+        linear-gradient(180deg, transparent 20%, #001B44 100%),
+        repeating-linear-gradient(90deg, #0d5c32 0 14px, #0a4a28 14px 28px);
+      position: relative;
+    }
+    .hero-nav {
+      display: flex; justify-content: space-between; padding: 26px 10px 0;
+    }
+    .ico-btn {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(0,27,68,0.45); display: grid; place-items: center;
+      color: var(--white); font-size: 12px;
+    }
+    .hero-chips {
+      position: absolute; left: 10px; right: 10px; bottom: 8px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .cd {
+      border: 1px solid var(--gold); color: var(--gold-l);
+      height: 18px; padding: 0 8px; border-radius: 999px;
+      font: 700 7px var(--ui); display: flex; align-items: center; gap: 4px;
+      background: rgba(0,27,68,0.55);
+    }
+    .d-pad { padding: 8px 12px 0; }
+    .d-hero { display: flex; gap: 12px; }
+    .meta { display: flex; gap: 8px; margin-top: 6px; font: 600 8px var(--ui); color: var(--muted); }
+    .venue {
+      margin-top: 8px; background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 8px; display: flex; gap: 8px;
+    }
+    .mini {
+      width: 64px; height: 54px; border-radius: 8px; background: #1a3a28;
+      position: relative; flex-shrink: 0;
+    }
+    .how { display: flex; gap: 5px; margin-top: 6px; }
+    .mini-c {
+      flex: 1; background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 6px;
+    }
+    .mini-c p { font: 600 7px var(--ui); color: var(--muted); }
+    .mini-c b { display: block; font: 700 14px var(--num); color: var(--white); }
+    .mini-c.g b { color: var(--gold); }
+    .sticky {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      height: 58px; background: var(--navy); border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; padding: 0 10px 8px;
+    }
+    .cta {
+      height: 36px; padding: 0 14px; border-radius: 18px;
+      background: linear-gradient(135deg, var(--gold-l), var(--gold));
+      color: var(--navy-dark); font: 700 10px var(--ui);
+      display: flex; align-items: center;
+    }
+    .btn-p, .btn-s {
+      height: 40px; border-radius: 20px; width: 100%;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      font: 700 13px var(--ui); margin-bottom: 8px;
+    }
+    .btn-p { background: linear-gradient(135deg, var(--gold-l), var(--gold)); color: var(--navy-dark); }
+    .btn-s { background: transparent; border: 1px solid var(--border-s); color: var(--white); }
+    .chip-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ds-nav {
+      height: 58px; background: linear-gradient(#002B62, #001B44);
+      border: 1px solid var(--border); border-radius: 12px;
+      display: flex; align-items: flex-end; justify-content: space-around; padding-bottom: 6px;
+      position: relative;
+    }
+    svg.i { display: block; }
+  </style>
+</head>
+<body>
+  <div class="board">
+    <div class="phones">
+
+      <!-- 01 LISTA -->
+      <div class="col">
+        <div class="phone-frame"><div class="phone">
+          <div class="island"></div>
+          <div class="status"><span>9:41</span><span>●●●</span></div>
+          <div class="header">
+            <div class="header-row">
+              <span style="width:48px"></span>
+              <div class="brand">
+                <div class="stars">★★★</div>
+                <div class="wordmark">PorLa<span class="g">Cancha</span></div>
+                <div class="tag">Y algo más</div>
+              </div>
+              <div class="caba">
+                <svg class="i" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8BC9EB" stroke-width="2"><path d="M12 21s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.2"/></svg>
+                CABA
+              </div>
+            </div>
+          </div>
+          <div class="seg"><button class="on">Lista</button><button>Mapa</button></div>
+          <div class="filters">
+            <div class="chip on">Hoy</div>
+            <div class="chip">Mañana</div>
+            <div class="chip">Finde</div>
+            <div class="chip">F5</div>
+            <div class="chip">F7</div>
+            <div class="chip">F9</div>
+            <div class="chip">F11</div>
+          </div>
+          <div class="row2">
+            <div class="dd">Cualquier monto ▾</div>
+            <div class="filt">Filtros</div>
+          </div>
+          <div class="list">
+            <article class="card">
+              <div class="thumb"></div>
+              <div class="body">
+                <div class="st-row">
+                  <span class="st open"><span class="dot"></span> Abierto</span>
+                  <svg class="heart" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 12 6a5.5 5.5 0 0 0-10 2.5C2 10.8 3.5 12.5 5 14l7 7z"/></svg>
+                </div>
+                <div class="mid">
+                  <div class="when"><div class="dia">JUEVES</div><div class="hora">21:00</div></div>
+                  <div class="copy">
+                    <div class="mod">Por la cancha y</div>
+                    <div class="prize">$100.000 arriba</div>
+                  </div>
+                </div>
+                <div class="loc">La Catedral Fútbol</div>
+                <div class="sub">2,1 km · Villa Urquiza</div>
+                <div class="slots"><div class="avs"><span class="av"></span><span class="av empty"></span><span class="cupo">1 de 2</span></div><span class="fmt">F7</span></div>
+                <div class="pay">Cada equipo paga: <b>$110.000</b></div>
+              </div>
+            </article>
+            <article class="card sm">
+              <div class="thumb"></div>
+              <div class="body">
+                <span class="st urgent">Último lugar</span>
+                <div class="mid">
+                  <div class="when"><div class="dia">JUEVES</div><div class="hora">22:00</div></div>
+                  <div class="copy"><div class="mod">Solo por la cancha</div></div>
+                </div>
+                <div class="loc">La Canchita</div>
+                <div class="sub">3,4 km · Belgrano</div>
+                <div class="slots"><div class="avs"><span class="av"></span><span class="av"></span><span class="cupo">1 de 2</span></div><span class="fmt">F5</span></div>
+                <div class="pay">Cada equipo paga: <b>$60.000</b></div>
+              </div>
+            </article>
+            <article class="card sm">
+              <div class="thumb"></div>
+              <div class="body">
+                <span class="st full">Completo</span>
+                <div class="mid">
+                  <div class="when"><div class="dia">VIERNES</div><div class="hora">20:00</div></div>
+                  <div class="copy">
+                    <div class="mod">Por la cancha y</div>
+                    <div class="prize" style="font-size:16px">$50.000 arriba</div>
+                  </div>
+                </div>
+                <div class="loc">El Potrero</div>
+                <div class="sub">5,2 km · Palermo</div>
+                <div class="slots"><div class="avs"><span class="av"></span><span class="av"></span><span class="cupo">2 de 2</span></div><span class="fmt">F9</span></div>
+                <div class="pay">Cada equipo paga: <b>$80.000</b></div>
+              </div>
+            </article>
+          </div>
+          <nav class="nav">
+            <div class="tab on">Explorar</div>
+            <div class="tab">Mis partidos</div>
+            <div class="fab">+</div>
+            <div class="tab">Equipos</div>
+            <div class="tab">Perfil</div>
+          </nav>
+        </div></div>
+        <div class="caption"><b>01. EXPLORAR — LISTA</b><span>Vista principal con filtros rápidos y lista de desafíos.</span></div>
+      </div>
+
+      <!-- 02 MAPA -->
+      <div class="col">
+        <div class="phone-frame"><div class="phone">
+          <div class="island"></div>
+          <div class="status"><span>9:41</span><span>●●●</span></div>
+          <div class="header">
+            <div class="header-row">
+              <span style="width:48px"></span>
+              <div class="brand">
+                <div class="stars">★★★</div>
+                <div class="wordmark">PorLa<span class="g">Cancha</span></div>
+                <div class="tag">Y algo más</div>
+              </div>
+              <div class="caba">CABA</div>
+            </div>
+          </div>
+          <div class="seg"><button>Lista</button><button class="on">Mapa</button></div>
+          <div class="filters">
+            <div class="chip on">Hoy</div>
+            <div class="chip">Mañana</div>
+            <div class="chip">Finde</div>
+            <div class="chip">F5</div>
+            <div class="chip">F7</div>
+          </div>
+          <div class="map-wrap">
+            <div class="street" style="left:20px;top:80px;width:220px;height:2px;transform:rotate(12deg)"></div>
+            <div class="street" style="left:40px;top:40px;width:2px;height:260px"></div>
+            <div class="street" style="left:160px;top:20px;width:2px;height:280px"></div>
+            <div class="map-label" style="left:28px;top:36px">BELGRANO</div>
+            <div class="map-label" style="left:168px;top:70px">PALERMO</div>
+            <div class="map-label" style="left:24px;top:210px">VILLA URQUIZA</div>
+            <div class="map-label" style="left:150px;top:168px">VILLA CRESPO</div>
+            <div class="map-label" style="left:90px;top:250px">CABALLITO</div>
+            <div class="me"><i></i></div>
+            <div class="pin" style="left:70px;top:90px">$60K</div>
+            <div class="pin" style="left:200px;top:100px">$80K</div>
+            <div class="pin" style="left:210px;top:180px">$100K</div>
+            <div class="pin" style="left:90px;top:200px">$60K</div>
+            <div class="pin sel" style="left:150px;top:140px">$110K</div>
+          </div>
+          <div class="float">
+            <div class="thumb"></div>
+            <div class="body">
+              <div class="float x">✕</div>
+              <span class="st open"><span class="dot"></span> Abierto</span>
+              <div class="mid">
+                <div class="when"><div class="dia">JUEVES</div><div class="hora" style="font-size:22px">21:00</div></div>
+                <div class="copy">
+                  <div class="mod">Por la cancha y</div>
+                  <div class="prize" style="font-size:16px">$100.000 arriba</div>
+                </div>
+              </div>
+              <div class="sub" style="margin-left:0">La Catedral Fútbol · 2,1 km · F7</div>
+            </div>
+          </div>
+          <nav class="nav">
+            <div class="tab on">Explorar</div>
+            <div class="tab">Mis partidos</div>
+            <div class="fab">+</div>
+            <div class="tab">Equipos</div>
+            <div class="tab">Perfil</div>
+          </nav>
+        </div></div>
+        <div class="caption"><b>02. EXPLORAR — MAPA</b><span>Pins con el monto de cada desafío. Al tocar un pin se muestra la tarjeta.</span></div>
+      </div>
+
+      <!-- 03 DETALLE -->
+      <div class="col">
+        <div class="phone-frame"><div class="phone detail">
+          <div class="island"></div>
+          <div class="hero">
+            <div class="hero-nav">
+              <div class="ico-btn">‹</div>
+              <div style="display:flex;gap:6px"><div class="ico-btn">♡</div><div class="ico-btn">↗</div></div>
+            </div>
+            <div class="hero-chips">
+              <span class="st open"><span class="dot"></span> Abierto</span>
+              <span class="cd">Cierra en 14 h 32 min</span>
+            </div>
+          </div>
+          <div class="d-pad">
+            <div class="d-hero">
+              <div class="when"><div class="dia">JUEVES</div><div class="hora">21:00</div><div class="sub" style="margin-left:0">5 de dic. 2024</div></div>
+              <div>
+                <div class="mod">Por la cancha y</div>
+                <div class="prize">$100.000 arriba</div>
+              </div>
+            </div>
+            <div class="meta"><span>F7</span><span>|</span><span>2 equipos</span><span>|</span><span>2,1 km</span></div>
+            <div class="venue">
+              <div style="flex:1">
+                <div style="font:700 10px var(--ui)">La Catedral Fútbol</div>
+                <div style="font:400 8px var(--ui);color:var(--muted);margin-top:2px">Av. Triunvirato 3200, Villa Urquiza, CABA</div>
+                <div style="font:700 8px var(--ui);color:var(--gold);margin-top:4px">4.8 (320)</div>
+              </div>
+              <div class="mini"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:8px">
+              <span style="font:800 9px var(--ui)">¿Cómo funciona?</span>
+              <span style="font:700 8px var(--ui);color:var(--sky)">Ver reglas completas</span>
+            </div>
+            <div class="how">
+              <div class="mini-c"><p>Cada equipo paga</p><b>$110.000</b><p>$60.000 cancha + $50.000 arriba</p></div>
+              <div class="mini-c g"><p>Si ganás</p><b>$150.000</b><p>Tu plata + el arriba</p></div>
+              <div class="mini-c"><p>Si perdés</p><b>$110.000</b><p>Neutral, sin rojo</p></div>
+            </div>
+          </div>
+          <div class="sticky">
+            <div>
+              <div style="font:600 7px var(--ui);color:var(--muted)">Cada equipo paga</div>
+              <div style="font:700 16px var(--num)">$110.000</div>
+            </div>
+            <div class="cta">Inscribir mi equipo</div>
+          </div>
+        </div></div>
+        <div class="caption"><b>03. DETALLE DE DESAFÍO</b><span>Toda la información clave, desglose claro y CTA fijo.</span></div>
+      </div>
+
+      <!-- 04 DS -->
+      <div class="ds">
+        <h2>TARJETA DE DESAFÍO (COMPONENTE)</h2>
+        <div class="measure">
+          <span class="dim" style="top:-12px;left:50%;transform:translateX(-50%)">348 × ~164 · r20</span>
+          <article class="card" style="width:348px;max-width:100%;min-height:118px">
+            <div class="thumb" style="width:58px"></div>
+            <div class="body">
+              <span class="st open"><span class="dot"></span> Abierto</span>
+              <div class="mid">
+                <div class="when"><div class="dia">JUEVES</div><div class="hora">21:00</div></div>
+                <div class="copy">
+                  <div class="mod">Por la cancha y</div>
+                  <div class="prize">$100.000 arriba</div>
+                </div>
+              </div>
+              <div class="loc">La Catedral Fútbol</div>
+              <div class="sub">2,1 km · Villa Urquiza</div>
+              <div class="slots"><div class="avs"><span class="av"></span><span class="av empty"></span><span class="cupo">1 de 2</span></div><span class="fmt">F7</span></div>
+              <div class="pay">Cada equipo paga: <b>$110.000</b></div>
+            </div>
+          </article>
+        </div>
+
+        <h2>CHIPS DE ESTADO</h2>
+        <div class="chip-grid">
+          <span class="st open"><span class="dot"></span> Abierto</span>
+          <span class="st urgent">Último lugar</span>
+          <span class="st full">Completo</span>
+          <span class="st urgent">Pendiente de pago</span>
+          <span class="st" style="background:rgba(184,196,214,0.16)">Esperando resultado</span>
+          <span class="st urgent">Ganaste</span>
+          <span class="st" style="background:rgba(184,196,214,0.12)">Perdiste</span>
+          <span class="st" style="background:rgba(239,68,68,0.16);color:#EF4444">Cancelado</span>
+        </div>
+
+        <h2>BOTONES</h2>
+        <div class="btn-p">Inscribir mi equipo</div>
+        <div class="btn-s">Ver en mapa</div>
+        <p style="font-size:10px;color:var(--muted);line-height:1.4">Primario 56× pill r28 · Manrope 16 Semibold · texto #001B44<br/>Secundario borde rgba(255,255,255,0.20)</p>
+
+        <h2>NAVEGACIÓN INFERIOR</h2>
+        <div class="ds-nav">
+          <div class="tab on">Explorar</div>
+          <div class="tab">Mis partidos</div>
+          <div class="fab" style="margin-bottom:4px">+</div>
+          <div class="tab">Equipos</div>
+          <div class="tab">Perfil</div>
+        </div>
+        <p style="font-size:10px;color:var(--muted);margin-top:8px">84 px · iconos 24 · labels 12 · FAB 64 · touch 48</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

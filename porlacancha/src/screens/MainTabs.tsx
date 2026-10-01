@@ -1,0 +1,681 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Alert, AppState, Pressable, StyleSheet, Text, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { StatusBar } from "expo-status-bar";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { colors, gradientRn } from "@shared/design";
+import { useAuth } from "../auth/AuthProvider";
+import { hapticMedium } from "../lib/haptics";
+import { getDesafiosPublicos, type Desafio } from "../lib/desafios";
+import { listInvitacionesRecibidas, listMisEquipos, equiposDondeEsCapitan, type EquipoListItem } from "../lib/equipos";
+import { toggleFavorito } from "../lib/favoritos";
+import { Calendar, Plus, Search, User, Users, iconStroke } from "../lib/icons";
+import { getInscripcionMia, type InscripcionMia } from "../lib/inscripciones";
+import {
+  countUnreadNotificaciones,
+  listNotificaciones,
+  type DestinoNotif,
+  type Notificacion,
+} from "../lib/notificaciones";
+import {
+  clearPendingAction,
+  peekPendingAction,
+  profileNeedsPhone,
+  profileNeedsUsername,
+  profileReadyForActions,
+  setPendingAction,
+  type PendingAction,
+} from "../lib/pending-action";
+import { supabase } from "../lib/supabase";
+import { mensajeErrorEquipo, rpcResponderSolicitud } from "@shared/equipos";
+import { CompletePhoneScreen } from "./auth/CompletePhoneScreen";
+import { CompleteUsernameScreen } from "./auth/CompleteUsernameScreen";
+import { ExplorarScreen } from "./ExplorarScreen";
+import { DesafioDetalleScreen } from "./DesafioDetalleScreen";
+import { InscribirEquipoScreen } from "./InscribirEquipoScreen";
+import { MisPartidosScreen } from "./MisPartidosScreen";
+import { NotificacionesScreen } from "./NotificacionesScreen";
+import { PlusActionsSheet } from "./PlusActionsSheet";
+import { UnirseEnlaceSheet } from "./UnirseEnlaceSheet";
+import { PerfilHub } from "./perfil/PerfilHub";
+import { CrearEquipoScreen } from "./equipos/CrearEquipoScreen";
+import { EquipoDetalleScreen } from "./equipos/EquipoDetalleScreen";
+import { EquiposListScreen } from "./equipos/EquiposListScreen";
+import { InvitacionesScreen } from "./equipos/InvitacionesScreen";
+import { PlayersSearchScreen } from "./jugadores/PlayersSearchScreen";
+import { PlayerPublicProfileScreen } from "./jugadores/PlayerPublicProfileScreen";
+import type { SearchPlayer } from "../lib/player-search";
+
+type Tab = "explore" | "matches" | "teams" | "profile";
+type TeamsView =
+  | { name: "list" }
+  | { name: "create" }
+  | { name: "detail"; id: string }
+  | { name: "inbox" }
+  | { name: "search"; fromEquipoId: string }
+  | { name: "player"; player: SearchPlayer; fromEquipoId: string };
+
+type Props = {
+  onRequestAuth: () => void;
+};
+
+export function MainTabs({ onRequestAuth }: Props) {
+  const insets = useSafeAreaInsets();
+  const { session, signOut, profile } = useAuth();
+  const loggedIn = Boolean(session?.user);
+  const [tab, setTab] = useState<Tab>("explore");
+  const [preferMap, setPreferMap] = useState(false);
+  const [detalle, setDetalle] = useState<Desafio | null>(null);
+  const [teamsView, setTeamsView] = useState<TeamsView>({ name: "list" });
+  const [items, setItems] = useState<Desafio[]>([]);
+  const [equipos, setEquipos] = useState<EquipoListItem[]>([]);
+  const [inbox, setInbox] = useState<Awaited<ReturnType<typeof listInvitacionesRecibidas>>>([]);
+  const [loading, setLoading] = useState(true);
+  const [teamsLoading, setTeamsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [hideProfileNav, setHideProfileNav] = useState(false);
+  const [profileGate, setProfileGate] = useState<null | "username" | "phone">(null);
+  const [notifsOpen, setNotifsOpen] = useState(false);
+  const [notifs, setNotifs] = useState<Notificacion[]>([]);
+  const [notifsLoading, setNotifsLoading] = useState(false);
+  const [unreadNotifs, setUnreadNotifs] = useState(0);
+  const [plusOpen, setPlusOpen] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
+  const [plusSearch, setPlusSearch] = useState(false);
+  const [plusPlayer, setPlusPlayer] = useState<SearchPlayer | null>(null);
+  const [inscribir, setInscribir] = useState<{ desafio: Desafio; existing: InscripcionMia | null } | null>(null);
+  const [mia, setMia] = useState<InscripcionMia | null>(null);
+  const resumedKey = useRef<string | null>(null);
+
+  const refreshTeams = useCallback(async () => {
+    if (!profile) {
+      setEquipos([]);
+      setInbox([]);
+      setTeamsLoading(false);
+      return;
+    }
+    setTeamsLoading(true);
+    const [mine, invites] = await Promise.all([
+      listMisEquipos(profile.id),
+      listInvitacionesRecibidas(profile.id),
+    ]);
+    setEquipos(mine);
+    setInbox(invites);
+    setTeamsLoading(false);
+  }, [profile]);
+
+  const refreshNotifs = useCallback(async () => {
+    if (!profile) {
+      setNotifs([]);
+      setUnreadNotifs(0);
+      setNotifsLoading(false);
+      return;
+    }
+    setNotifsLoading(true);
+    const [list, unread] = await Promise.all([listNotificaciones(), countUnreadNotificaciones()]);
+    setNotifs(list);
+    setUnreadNotifs(unread);
+    setNotifsLoading(false);
+  }, [profile]);
+
+  useEffect(() => {
+    void refreshNotifs();
+  }, [refreshNotifs]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") void refreshNotifs();
+    });
+    return () => sub.remove();
+  }, [refreshNotifs]);
+
+  const refreshDesafios = useCallback(async () => {
+    setLoading(true);
+    const { data, error: loadError } = await getDesafiosPublicos();
+    setItems(data);
+    setError(loadError);
+    setSelectedId((prev) => prev ?? data[0]?.id ?? null);
+    setLoading(false);
+    return data;
+  }, []);
+
+  useEffect(() => {
+    void refreshDesafios();
+  }, [refreshDesafios]);
+
+  useEffect(() => {
+    refreshTeams();
+  }, [refreshTeams]);
+
+  useEffect(() => {
+    if (!loggedIn && tab === "profile") setTab("explore");
+    if (!loggedIn) setNotifsOpen(false);
+  }, [loggedIn, tab]);
+
+  useEffect(() => {
+    if (!detalle || !profile) {
+      setMia(null);
+      return;
+    }
+    const ids = equipos.map((e) => e.id);
+    void getInscripcionMia(detalle.id, ids).then(setMia);
+  }, [detalle, equipos, profile]);
+
+  const openMap = (id?: string) => {
+    if (id) setSelectedId(id);
+    setDetalle(null);
+    setPreferMap(true);
+    setTab("explore");
+  };
+
+  const openDesafio = (d: Desafio) => {
+    setSelectedId(d.id);
+    setDetalle(d);
+  };
+
+  const openNotifs = () => {
+    if (!loggedIn) {
+      onRequestAuth();
+      return;
+    }
+    setNotifsOpen(true);
+    void refreshNotifs();
+  };
+
+  const startInscribir = async (d: Desafio) => {
+    const caps = equiposDondeEsCapitan(equipos);
+    const existing = await getInscripcionMia(
+      d.id,
+      caps.map((e) => e.id)
+    );
+    setInscribir({ desafio: d, existing });
+  };
+
+  const openFromNotif = (destino: DestinoNotif, equipoId: string | null, desafioId?: string | null) => {
+    setNotifsOpen(false);
+    void refreshNotifs();
+    void refreshTeams();
+    if (destino === "desafio" && desafioId) {
+      const d = items.find((x) => x.id === desafioId);
+      if (d) {
+        setSelectedId(d.id);
+        setDetalle(d);
+      } else {
+        void refreshDesafios().then((list) => {
+          const found = list.find((x) => x.id === desafioId);
+          if (found) {
+            setSelectedId(found.id);
+            setDetalle(found);
+          }
+        });
+      }
+      return;
+    }
+    if (destino === "inbox") {
+      setTab("teams");
+      void refreshTeams().then(() => setTeamsView({ name: "inbox" }));
+      return;
+    }
+    if (destino === "equipo" && equipoId) {
+      setTab("teams");
+      setTeamsView({ name: "detail", id: equipoId });
+      return;
+    }
+    setTab("teams");
+    setTeamsView({ name: "list" });
+  };
+
+  const needAuth = () => {
+    if (loggedIn) return false;
+    onRequestAuth();
+    return true;
+  };
+
+  const queueOrRun = async (action: PendingAction, run: () => void | Promise<void>) => {
+    await setPendingAction(action);
+    if (!loggedIn) {
+      onRequestAuth();
+      return;
+    }
+    if (profileNeedsUsername(profile)) {
+      setProfileGate("username");
+      return;
+    }
+    if (profileNeedsPhone(profile)) {
+      setProfileGate("phone");
+      return;
+    }
+    await clearPendingAction();
+    await run();
+  };
+
+  useEffect(() => {
+    if (!profileGate) return;
+    if (profileNeedsUsername(profile)) {
+      setProfileGate("username");
+      return;
+    }
+    if (profileNeedsPhone(profile)) {
+      setProfileGate("phone");
+      return;
+    }
+    setProfileGate(null);
+  }, [profile, profileGate]);
+
+  useEffect(() => {
+    if (!loggedIn || loading) return;
+    let cancelled = false;
+    const go = async () => {
+      const action = await peekPendingAction();
+      if (cancelled || !action || action.kind === "join_token") return;
+      if (action.kind === "inscribir" && teamsLoading) return;
+      if (action.kind !== "open_inbox" && action.kind !== "favorite" && !profileReadyForActions(profile)) return;
+      const key = JSON.stringify(action);
+      if (resumedKey.current === key) return;
+      resumedKey.current = key;
+      await clearPendingAction();
+      setProfileGate(null);
+      if (action.kind === "create_team") {
+        setTab("teams");
+        setTeamsView({ name: "create" });
+        return;
+      }
+      if (action.kind === "open_inbox") {
+        setTab("teams");
+        await refreshTeams();
+        setTeamsView({ name: "inbox" });
+        return;
+      }
+      if (action.kind === "accept_invite") {
+        setTab("teams");
+        setTeamsView({ name: "inbox" });
+        const res = await rpcResponderSolicitud(supabase, action.solicitudId, true);
+        void refreshTeams();
+        if (!res.ok) {
+          Alert.alert("Invitación", mensajeErrorEquipo(res.error));
+        }
+        return;
+      }
+      if (action.kind === "favorite") {
+        await toggleFavorito(action.jugadorId);
+        setTab("profile");
+        return;
+      }
+      if (action.kind === "inscribir") {
+        const d = items.find((x) => x.id === action.desafioId);
+        if (d) {
+          setSelectedId(d.id);
+          setDetalle(d);
+          void startInscribir(d);
+        }
+      }
+    };
+    void go();
+    return () => {
+      cancelled = true;
+    };
+  }, [loggedIn, profile, loading, teamsLoading, items, refreshTeams, equipos]);
+
+  const crearPartido = () => {
+    void hapticMedium();
+    if (needAuth()) return;
+    setPlusOpen(true);
+  };
+
+  const teamsBody = () => {
+    if (teamsView.name === "create") {
+      return (
+        <CrearEquipoScreen
+          onBack={() => setTeamsView({ name: "list" })}
+          onCreated={(id) => {
+            refreshTeams();
+            setTeamsView({ name: "detail", id });
+          }}
+        />
+      );
+    }
+    if (teamsView.name === "search") {
+      return (
+        <PlayersSearchScreen
+          onBack={() => setTeamsView({ name: "detail", id: teamsView.fromEquipoId })}
+          onOpenPlayer={(p) => setTeamsView({ name: "player", player: p, fromEquipoId: teamsView.fromEquipoId })}
+          onRequestAuth={onRequestAuth}
+        />
+      );
+    }
+    if (teamsView.name === "player") {
+      return (
+        <PlayerPublicProfileScreen
+          player={teamsView.player}
+          myUserId={profile?.id}
+          captainTeams={equiposDondeEsCapitan(equipos)}
+          preferredEquipoId={teamsView.fromEquipoId}
+          onBack={() => setTeamsView({ name: "search", fromEquipoId: teamsView.fromEquipoId })}
+          onCreateTeam={() => setTeamsView({ name: "create" })}
+          onRequestAuth={onRequestAuth}
+        />
+      );
+    }
+    if (teamsView.name === "detail") {
+      return (
+        <EquipoDetalleScreen
+          equipoId={teamsView.id}
+          onBack={() => {
+            refreshTeams();
+            setTeamsView({ name: "list" });
+          }}
+          onLeft={() => {
+            refreshTeams();
+            setTeamsView({ name: "list" });
+          }}
+          onBuscarJugadores={() => setTeamsView({ name: "search", fromEquipoId: teamsView.id })}
+        />
+      );
+    }
+    if (teamsView.name === "inbox") {
+      return (
+        <InvitacionesScreen
+          items={inbox}
+          onBack={() => setTeamsView({ name: "list" })}
+          onChanged={refreshTeams}
+          onAccept={(solicitudId, run) => {
+            void queueOrRun({ kind: "accept_invite", solicitudId }, run);
+          }}
+        />
+      );
+    }
+    return (
+      <EquiposListScreen
+        items={equipos}
+        loading={teamsLoading}
+        inboxCount={inbox.length}
+        onCreate={() => {
+          void queueOrRun({ kind: "create_team" }, () => setTeamsView({ name: "create" }));
+        }}
+        onInbox={() => {
+          void queueOrRun({ kind: "open_inbox" }, () => {
+            void refreshTeams().then(() => setTeamsView({ name: "inbox" }));
+          });
+        }}
+        onOpen={(id) => setTeamsView({ name: "detail", id })}
+      />
+    );
+  };
+
+  const on = (name: Tab) => tab === name;
+
+  return (
+    <View style={styles.root}>
+      <StatusBar style="light" />
+      {profile?.rol === "owner" ? (
+        <Text style={styles.ownerHint}>En PorLaCancha estás como jugador.</Text>
+      ) : null}
+      <View style={styles.body}>
+        {loggedIn && profileGate === "username" ? (
+          <CompleteUsernameScreen />
+        ) : loggedIn && profileGate === "phone" ? (
+          <CompletePhoneScreen />
+        ) : inscribir ? (
+          <InscribirEquipoScreen
+            desafio={inscribir.desafio}
+            captainTeams={equiposDondeEsCapitan(equipos)}
+            existing={inscribir.existing}
+            onBack={() => setInscribir(null)}
+            onCreateTeam={() => {
+              setInscribir(null);
+              void queueOrRun({ kind: "create_team" }, () => {
+                setTeamsView({ name: "create" });
+                setTab("teams");
+              });
+            }}
+            onDone={() => {
+              const id = inscribir.desafio.id;
+              setInscribir(null);
+              void refreshNotifs();
+              void refreshDesafios().then((list) => {
+                const d = list.find((x) => x.id === id);
+                if (d) {
+                  setDetalle(d);
+                  setSelectedId(d.id);
+                }
+              });
+            }}
+          />
+        ) : plusPlayer ? (
+          <PlayerPublicProfileScreen
+            player={plusPlayer}
+            myUserId={profile?.id}
+            captainTeams={equiposDondeEsCapitan(equipos)}
+            onBack={() => setPlusPlayer(null)}
+            onCreateTeam={() => {
+              setPlusPlayer(null);
+              setPlusSearch(false);
+              void queueOrRun({ kind: "create_team" }, () => {
+                setTeamsView({ name: "create" });
+                setTab("teams");
+              });
+            }}
+            onRequestAuth={onRequestAuth}
+          />
+        ) : plusSearch ? (
+          <PlayersSearchScreen
+            onBack={() => setPlusSearch(false)}
+            onOpenPlayer={(p) => setPlusPlayer(p)}
+            onRequestAuth={onRequestAuth}
+          />
+        ) : notifsOpen ? (
+          <NotificacionesScreen
+            items={notifs}
+            loading={notifsLoading}
+            onBack={() => {
+              setNotifsOpen(false);
+              void refreshNotifs();
+            }}
+            onRefresh={() => void refreshNotifs()}
+            onOpen={openFromNotif}
+          />
+        ) : detalle ? (
+          <DesafioDetalleScreen
+            desafio={detalle}
+            guest={!loggedIn}
+            inscriptoComo={
+              mia
+                ? equiposDondeEsCapitan(equipos).some((e) => e.id === mia.equipoId)
+                  ? "capitan"
+                  : "miembro"
+                : null
+            }
+            onBack={() => setDetalle(null)}
+            onInscribir={() => {
+              void queueOrRun({ kind: "inscribir", desafioId: detalle.id }, () => startInscribir(detalle));
+            }}
+            onOpenMap={() => openMap(detalle.id)}
+          />
+        ) : tab === "matches" ? (
+          <MisPartidosScreen
+            guest={!loggedIn}
+            onRequestAuth={onRequestAuth}
+            onOpenDesafio={openDesafio}
+            onEditarConvocados={(d) => void startInscribir(d)}
+          />
+        ) : tab === "profile" && loggedIn ? (
+          <PerfilHub
+            guest={false}
+            equipos={equipos}
+            onRequestAuth={onRequestAuth}
+            onSignOut={async () => {
+              await signOut();
+              setTab("explore");
+            }}
+            onOpenTeam={(id) => {
+              setTeamsView({ name: "detail", id });
+              setTab("teams");
+            }}
+            onOpenExplore={() => {
+              setPreferMap(false);
+              setTab("explore");
+            }}
+            onCreateTeam={() => {
+              void queueOrRun({ kind: "create_team" }, () => {
+                setTeamsView({ name: "create" });
+                setTab("teams");
+              });
+            }}
+            onJoinTeam={() => {
+              if (needAuth()) return;
+              setTeamsView({ name: "list" });
+              setTab("teams");
+            }}
+            onHideNav={setHideProfileNav}
+            unreadNotifs={unreadNotifs}
+            onOpenNotifs={openNotifs}
+          />
+        ) : tab === "teams" ? (
+          teamsBody()
+        ) : (
+          <ExplorarScreen
+            items={items}
+            loading={loading}
+            error={error}
+            guest={!loggedIn}
+            selectedId={selectedId}
+            preferMap={preferMap}
+            onSelectId={setSelectedId}
+            onOpenDesafio={openDesafio}
+            unreadNotifs={loggedIn ? unreadNotifs : 0}
+            onOpenNotifs={loggedIn ? openNotifs : undefined}
+          />
+        )}
+      </View>
+      {!detalle &&
+      !notifsOpen &&
+      !inscribir &&
+      !plusSearch &&
+      !plusPlayer &&
+      !hideProfileNav &&
+      !profileGate &&
+      !(tab === "teams" && (teamsView.name === "search" || teamsView.name === "player")) ? (
+        <View style={[styles.nav, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+          <Pressable
+            style={styles.navBtn}
+            onPress={() => {
+              setPreferMap(false);
+              setTab("explore");
+            }}
+          >
+            <Search color={on("explore") ? colors.gold : colors.textSecondary} size={24} strokeWidth={iconStroke} />
+            <Text style={[styles.navLabel, on("explore") && styles.navLabelOn]}>Explorar</Text>
+          </Pressable>
+          <Pressable
+            style={styles.navBtn}
+            onPress={() => {
+              setTab("matches");
+            }}
+          >
+            <Calendar color={on("matches") ? colors.gold : colors.textSecondary} size={24} strokeWidth={iconStroke} />
+            <Text style={[styles.navLabel, on("matches") && styles.navLabelOn]}>Mis partidos</Text>
+          </Pressable>
+          <Pressable style={styles.fabHit} onPress={crearPartido} accessibilityLabel="Armar un desafío">
+            <LinearGradient colors={[...gradientRn.gold]} style={styles.fab}>
+              <Plus color={colors.navyDark} size={28} strokeWidth={2.5} />
+            </LinearGradient>
+          </Pressable>
+          <Pressable
+            style={styles.navBtn}
+            onPress={() => {
+              setTab("teams");
+              refreshTeams();
+            }}
+          >
+            <Users color={on("teams") ? colors.gold : colors.textSecondary} size={24} strokeWidth={iconStroke} />
+            <Text style={[styles.navLabel, on("teams") && styles.navLabelOn]}>Equipos</Text>
+          </Pressable>
+          <Pressable
+            style={styles.navBtn}
+            onPress={() => {
+              if (!loggedIn) {
+                onRequestAuth();
+                return;
+              }
+              setTab("profile");
+            }}
+            accessibilityLabel={loggedIn ? "Perfil" : "Ingresar"}
+          >
+            <User color={loggedIn && on("profile") ? colors.gold : colors.textSecondary} size={24} strokeWidth={iconStroke} />
+            <Text style={[styles.navLabel, loggedIn && on("profile") && styles.navLabelOn]}>
+              {loggedIn ? "Perfil" : "Ingresar"}
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
+      <PlusActionsSheet
+        visible={plusOpen}
+        onClose={() => setPlusOpen(false)}
+        onCrearEquipo={() => {
+          setPlusOpen(false);
+          void queueOrRun({ kind: "create_team" }, () => {
+            setTeamsView({ name: "create" });
+            setTab("teams");
+          });
+        }}
+        onBuscarJugadores={() => {
+          setPlusOpen(false);
+          setPlusSearch(true);
+        }}
+        onUnirmeEnlace={() => {
+          setPlusOpen(false);
+          setJoinOpen(true);
+        }}
+        onBuscarDesafio={() => {
+          setPlusOpen(false);
+          setPreferMap(true);
+          setTab("explore");
+        }}
+      />
+      <UnirseEnlaceSheet
+        visible={joinOpen}
+        onClose={() => setJoinOpen(false)}
+        onJoined={() => void refreshTeams()}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.navy },
+  ownerHint: {
+    textAlign: "center",
+    paddingTop: 48,
+    paddingBottom: 4,
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
+  body: { flex: 1 },
+  nav: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.navyDark,
+    paddingTop: 10,
+    minHeight: 72,
+  },
+  navBtn: { flex: 1, alignItems: "center", minHeight: 48, justifyContent: "center", gap: 4 },
+  navLabel: { fontSize: 11, fontWeight: "700", color: colors.textSecondary },
+  navLabelOn: { color: colors.gold },
+  fabHit: {
+    width: 64,
+    height: 64,
+    marginBottom: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  fab: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});

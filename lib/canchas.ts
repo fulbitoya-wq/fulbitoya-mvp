@@ -19,6 +19,7 @@ export interface Cancha {
   localidad_id: string | null;
   lat: number | null;
   lng: number | null;
+  place_id: string | null;
   created_at: string;
 }
 
@@ -38,6 +39,7 @@ export interface CrearCanchaInput {
   localidad_id?: string | null;
   lat?: number | null;
   lng?: number | null;
+  place_id?: string | null;
 }
 
 export async function crearCancha(input: CrearCanchaInput): Promise<{ data: { id: string } | null; error: string | null }> {
@@ -64,6 +66,7 @@ export async function crearCancha(input: CrearCanchaInput): Promise<{ data: { id
       localidad_id: input.localidad_id ?? null,
       lat: input.lat ?? null,
       lng: input.lng ?? null,
+      place_id: input.place_id ?? null,
       activa: true,
     })
     .select("id")
@@ -91,6 +94,9 @@ export interface ActualizarCanchaInput {
   descripcion?: string | null;
   logo_url?: string | null;
   fondo_url?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  place_id?: string | null;
 }
 
 export async function getCanchaDelOwnerById(canchaId: string): Promise<Cancha | null> {
@@ -128,6 +134,9 @@ export async function actualizarCanchaDelOwner(
   if (input.descripcion !== undefined) payload.descripcion = input.descripcion;
   if (input.logo_url !== undefined) payload.logo_url = input.logo_url;
   if (input.fondo_url !== undefined) payload.fondo_url = input.fondo_url;
+  if (input.lat !== undefined) payload.lat = input.lat;
+  if (input.lng !== undefined) payload.lng = input.lng;
+  if (input.place_id !== undefined) payload.place_id = input.place_id;
 
   const { error } = await supabase
     .from("canchas")

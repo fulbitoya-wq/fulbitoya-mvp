@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@shared/*": ["./shared/*"]
     }
   },
   "include": [
@@ -30,5 +31,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "zipnuevo"]
+    "exclude": ["node_modules", "zipnuevo", "porlacancha", "porlacancha-web", "jugatela", "jugatela-web"]
 }

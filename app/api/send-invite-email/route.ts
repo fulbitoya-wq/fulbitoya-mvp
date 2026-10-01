@@ -1,12 +1,26 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const from = process.env.SMTP_FROM || "FulbitoYa <onboarding@resend.dev>";
 const appBaseUrl = process.env.APP_BASE_URL || "http://localhost:3000";
 
+function getResend(): Resend | null {
+  const key = process.env.RESEND_API_KEY;
+  if (!key?.trim()) return null;
+  return new Resend(key);
+}
+
 export async function POST(req: Request) {
   try {
+    const resend = getResend();
+    if (!resend) {
+      console.error("send-invite-email: falta RESEND_API_KEY");
+      return NextResponse.json(
+        { ok: false, error: "Email no configurado (RESEND_API_KEY)" },
+        { status: 503 }
+      );
+    }
+
     const { email, teamName, type } = await req.json();
 
     const subject =

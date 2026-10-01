@@ -1,0 +1,178 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { colors, space } from "@shared/design";
+import type { Desafio } from "../lib/desafios";
+import { etiquetaEstado, chipToneEstado } from "../lib/desafios";
+import { cancelarInscripcion } from "../lib/inscripciones";
+import {
+  esPartidoProximo,
+  listMisPartidos,
+  puedeCancelarInscripcion,
+  puedeEditarConvocados,
+  type MiPartido,
+} from "../lib/mis-partidos";
+import { Button, Chip, DesafioCard, EmptyState, FilterChip, Heading, Kicker, Mute, Screen } from "../ui";
+import { typeStyle } from "../ui/textStyle";
+
+type Tab = "proximos" | "historial";
+
+type Props = {
+  guest: boolean;
+  onRequestAuth: () => void;
+  onOpenDesafio: (d: Desafio) => void;
+  onEditarConvocados: (d: Desafio) => void;
+};
+
+function rolLabel(p: MiPartido): string {
+  if (p.miRol === "capitan") return "Capitán";
+  if (p.miRol === "convocado") return "Convocado";
+  return "Plantel";
+}
+
+export function MisPartidosScreen({ guest, onRequestAuth, onOpenDesafio, onEditarConvocados }: Props) {
+  const [tab, setTab] = useState<Tab>("proximos");
+  const [items, setItems] = useState<MiPartido[]>([]);
+  const [loading, setLoading] = useState(!guest);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (guest) {
+      setItems([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+    setLoading(true);
+    const res = await listMisPartidos();
+    if (!res.ok) {
+      setError(res.error);
+      setItems([]);
+    } else {
+      setError(null);
+      setItems(res.items);
+    }
+    setLoading(false);
+  }, [guest]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const shown = useMemo(() => {
+    if (tab === "proximos") {
+      return items
+        .filter(esPartidoProximo)
+        .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.hora_inicio.localeCompare(b.hora_inicio));
+    }
+    return items
+      .filter((p) => !esPartidoProximo(p))
+      .sort((a, b) => b.fecha.localeCompare(a.fecha) || b.hora_inicio.localeCompare(a.hora_inicio));
+  }, [items, tab]);
+
+  const pedirCancelar = (p: MiPartido) => {
+    Alert.alert("Cancelar inscripción", "El lugar queda libre. Los convocados se enteran por el aviso.", [
+      { text: "Volver", style: "cancel" },
+      {
+        text: "Cancelar inscripción",
+        style: "destructive",
+        onPress: () => {
+          if (!p.inscripcionId) return;
+          void cancelarInscripcion(p.inscripcionId).then((res) => {
+            if (!res.ok) {
+              Alert.alert("No se pudo cancelar", res.error);
+              return;
+            }
+            void load();
+          });
+        },
+      },
+    ]);
+  };
+
+  if (guest) {
+    return (
+      <Screen scroll>
+        <Kicker>Calendario</Kicker>
+        <Heading>Mis partidos</Heading>
+        <EmptyState
+          title="Entrá para ver tus partidos"
+          body="Cuando tu equipo se inscriba o te convoquen, aparecen acá."
+          action={<Button label="Ingresar" onPress={onRequestAuth} />}
+        />
+      </Screen>
+    );
+  }
+
+  return (
+    <Screen>
+      <Kicker>Calendario</Kicker>
+      <Heading>Mis partidos</Heading>
+      <View style={styles.tabs}>
+        <FilterChip label="Próximos" selected={tab === "proximos"} onPress={() => setTab("proximos")} />
+        <FilterChip label="Historial" selected={tab === "historial"} onPress={() => setTab("historial")} />
+      </View>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} tintColor={colors.gold} />}
+      >
+        {error ? <Mute>{error}</Mute> : null}
+        {!loading && shown.length === 0 ? (
+          <EmptyState
+            title={tab === "proximos" ? "No tenés partidos próximos" : "Todavía no hay historial"}
+            body={
+              tab === "proximos"
+                ? "Cuando alguno de tus equipos se inscriba o te convoquen, el desafío queda acá."
+                : "Acá van los que ya se jugaron, se cancelaron o ya pasó la hora."
+            }
+          />
+        ) : (
+          shown.map((p) => {
+            const editar = puedeEditarConvocados(p);
+            const cancelar = puedeCancelarInscripcion(p);
+            return (
+              <View key={`${p.id}-${p.inscripcionId ?? ""}`} style={styles.block}>
+                <View style={styles.chips}>
+                  <Chip label={etiquetaEstado(p.estado)} tone={chipToneEstado(p.estado)} />
+                  {p.inscripcionEstado === "cancelada" ? <Chip label="Inscripción cancelada" tone="cancelled" /> : null}
+                  {p.inscripcionEstado === "pendiente_pago" ? <Chip label="Pendiente de pago" tone="payment" /> : null}
+                </View>
+                <DesafioCard desafio={p} onPress={() => onOpenDesafio(p)} />
+                <Mute>
+                  {rolLabel(p)}
+                  {p.miEquipoNombre ? ` · ${p.miEquipoNombre}` : ""}
+                  {p.rivalNombre ? ` vs ${p.rivalNombre}` : p.inscritos.length < 2 ? " · buscando rival" : ""}
+                </Mute>
+                {editar || cancelar ? (
+                  <View style={styles.actions}>
+                    {editar ? (
+                      <Pressable onPress={() => onEditarConvocados(p)} style={styles.linkHit}>
+                        <Text style={styles.link}>Editar convocados</Text>
+                      </Pressable>
+                    ) : null}
+                    {cancelar ? (
+                      <Pressable onPress={() => pedirCancelar(p)} style={styles.linkHit}>
+                        <Text style={styles.danger}>Cancelar inscripción</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                ) : null}
+              </View>
+            );
+          })
+        )}
+      </ScrollView>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  tabs: { flexDirection: "row", flexWrap: "wrap", gap: space[8], marginTop: space[12], marginBottom: space[8] },
+  list: { paddingBottom: space[40], paddingTop: space[8] },
+  block: { marginBottom: space[16] },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: space[8], marginBottom: space[8] },
+  actions: { flexDirection: "row", flexWrap: "wrap", gap: space[16], marginTop: space[8] },
+  linkHit: { minHeight: 44, justifyContent: "center" },
+  link: typeStyle("bodySmall", colors.gold),
+  danger: typeStyle("bodySmall", colors.danger),
+});

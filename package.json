@@ -4,6 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:porlacancha": "npm --prefix porlacancha start",
+    "dev:porlacancha-web": "npm --prefix porlacancha-web run dev",
+    "db:link": "node scripts/supabase-link.mjs",
+    "db:push": "npx supabase@2.117.0 db push",
+    "db:migrations": "npx supabase@2.117.0 migration list",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -23,7 +28,8 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "resend": "^6.9.4",
-    "tailwind-merge": "^2.5.4"
+    "tailwind-merge": "^2.5.4",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

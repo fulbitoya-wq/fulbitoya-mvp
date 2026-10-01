@@ -36,6 +36,10 @@ yarn-error.log*
 # local scratch / duplicate app tree (not part of FulbitoYa MVP)
 /zipnuevo/
 
+# supabase CLI
+/supabase/.temp
+/supabase/.branches
+
 # vercel
 .vercel
 
