@@ -1,17 +1,17 @@
 const path = require("path");
 
 const appRoot = path.resolve(__dirname);
-const workspaceRoot = path.resolve(__dirname, "..");
+const sharedRoot = path.join(appRoot, ".generated", "shared");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   turbopack: {
-    root: workspaceRoot,
+    root: appRoot,
     resolveAlias: {
-      "@shared": path.join(workspaceRoot, "shared"),
+      "@shared": sharedRoot,
     },
   },
-  outputFileTracingRoot: workspaceRoot,
+  outputFileTracingRoot: appRoot,
   images: {
     remotePatterns: [
       {
@@ -32,7 +32,7 @@ const nextConfig = {
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
-      "@shared": path.join(workspaceRoot, "shared"),
+      "@shared": sharedRoot,
     };
     return config;
   },

@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3002",
-    "build": "next build --webpack",
+    "dev": "node scripts/sync-shared.mjs && next dev --port 3002",
+    "build": "node scripts/sync-shared.mjs && next build --webpack",
     "start": "next start --port 3002",
     "lint": "eslint"
   },
