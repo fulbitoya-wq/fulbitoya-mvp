@@ -6,7 +6,7 @@ const workspaceRoot = path.resolve(__dirname, "..");
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   turbopack: {
-    root: appRoot,
+    root: workspaceRoot,
     resolveAlias: {
       "@shared": path.join(workspaceRoot, "shared"),
     },
