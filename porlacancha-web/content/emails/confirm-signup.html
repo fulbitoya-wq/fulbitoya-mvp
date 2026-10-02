@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PorLaCancha</title>
+  </head>
+  <body style="margin:0;padding:0;background:#001B44;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#001B44;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="max-width:560px;width:100%;background:#002B62;border:1px solid rgba(255,255,255,0.12);border-radius:16px;">
+            <tr>
+              <td align="center" style="padding:28px 28px 8px;">
+                <img
+                  src="https://porlacancha.com/brand/porlacancha.jpeg"
+                  alt="PorLaCancha"
+                  width="160"
+                  style="display:block;width:160px;max-width:70%;height:auto;border:0;"
+                />
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 28px 0;font-family:Arial,Helvetica,sans-serif;color:#D9A928;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;text-align:center;">
+                PorLaCancha
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 28px 0;font-family:Arial,Helvetica,sans-serif;color:#F7F5EF;font-size:22px;font-weight:bold;text-align:center;line-height:1.3;">
+                Confirmá tu cuenta
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:12px 28px 0;font-family:Arial,Helvetica,sans-serif;color:#B8C4D6;font-size:15px;line-height:1.55;text-align:center;">
+                Tocá el botón para activar tu usuario. Si no te registraste en PorLaCancha, ignorá este mail.
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:24px 28px 8px;">
+                <a
+                  href="{{ .ConfirmationURL }}"
+                  style="display:inline-block;background:#D9A928;color:#001B44;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;text-decoration:none;padding:14px 28px;border-radius:999px;"
+                >
+                  Confirmar email
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 28px 28px;font-family:Arial,Helvetica,sans-serif;color:#B8C4D6;font-size:12px;line-height:1.5;text-align:center;">
+                Si el botón no anda, copiá este enlace:<br />
+                <a href="{{ .ConfirmationURL }}" style="color:#8BC9EB;word-break:break-all;">{{ .ConfirmationURL }}</a>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;color:#B8C4D6;font-size:11px;text-align:center;">
+            PorLaCancha. Y algo más.
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -7,12 +7,14 @@ import { completeAuthFromUrl } from "@/lib/auth-from-url";
 import { appDeepLink } from "@/lib/site";
 import { getSupabase } from "@/lib/supabase";
 
-export function ConfirmadoClient() {
+type Props = { url: string; anon: string };
+
+export function ConfirmadoClient({ url, anon }: Props) {
   const [status, setStatus] = useState<"working" | "ok" | "warn">("working");
   const [detail, setDetail] = useState<string | null>(null);
 
   useEffect(() => {
-    const supabase = getSupabase();
+    const supabase = getSupabase(url, anon);
     if (!supabase) {
       setStatus("ok");
       return;
@@ -29,7 +31,7 @@ export function ConfirmadoClient() {
       }
       setStatus("ok");
     });
-  }, []);
+  }, [url, anon]);
 
   return (
     <SiteShell>
