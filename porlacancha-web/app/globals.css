@@ -145,3 +145,93 @@ body {
       transparent 8.4%
     );
 }
+
+.landing-hero-overlay {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 27, 68, 0.95) 0%,
+    rgba(0, 27, 68, 0.78) 42%,
+    rgba(0, 27, 68, 0.25) 72%,
+    rgba(0, 27, 68, 0.15) 100%
+  );
+}
+
+@media (max-width: 768px) {
+  .landing-hero-overlay {
+    background: linear-gradient(
+      180deg,
+      rgba(0, 27, 68, 0.94) 0%,
+      rgba(0, 27, 68, 0.82) 38%,
+      rgba(0, 27, 68, 0.55) 100%
+    );
+  }
+}
+
+.landing-cta {
+  background: linear-gradient(135deg, #f3d477 0%, #d9a928 100%);
+  transition: transform 160ms ease;
+}
+
+.landing-cta:hover {
+  transform: translateY(-2px);
+}
+
+.landing-badge {
+  transition: transform 160ms ease;
+}
+
+.landing-badge:hover {
+  transform: scale(1.02);
+}
+
+.landing-copy {
+  animation: landing-in 620ms ease both;
+}
+
+.landing-phones {
+  animation: landing-in 700ms 80ms ease both;
+}
+
+@keyframes landing-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-copy,
+  .landing-phones,
+  .landing-cta,
+  .landing-badge {
+    animation: none;
+    transition: none;
+  }
+
+  .landing-cta:hover,
+  .landing-badge:hover {
+    transform: none;
+  }
+}
+  background-image:
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 46%,
+      rgba(139, 201, 235, 0.08) 46%,
+      rgba(139, 201, 235, 0.08) 47%,
+      transparent 47%
+    ),
+    linear-gradient(
+      to right,
+      transparent 0,
+      transparent 8%,
+      rgba(217, 169, 40, 0.06) 8%,
+      rgba(217, 169, 40, 0.06) 8.4%,
+      transparent 8.4%
+    );
+}

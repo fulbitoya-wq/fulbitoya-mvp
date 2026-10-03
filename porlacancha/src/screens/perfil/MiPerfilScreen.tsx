@@ -1,7 +1,6 @@
-import { LinearGradient } from "expo-linear-gradient";
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, gradientRn, radius, space } from "@shared/design";
+import { colors, radius, space } from "@shared/design";
 import type { JugateLaProfile } from "../../auth/AuthProvider";
 import type { EquipoListItem } from "../../lib/equipos";
 import {
@@ -26,8 +25,10 @@ import {
   splitNombre,
   type FootballProfile,
 } from "../../lib/perfil";
-import { Button, Card, EmptyState, HeaderDecor, IconBtn, KvRow, Mute, NotifBell, PlayerAvatar, SectionTitle } from "../../ui";
+import { Button, Card, EmptyState, IconBtn, KvRow, Mute, NotifBell, PlayerAvatar, SectionTitle, showConfirm, TAB_BAR_CONTENT_INSET } from "../../ui";
 import { typeStyle } from "../../ui/textStyle";
+
+const fondoAzul = require("../../../assets/fondo-azul.jpeg");
 
 type Props = {
   guest: boolean;
@@ -85,11 +86,10 @@ export function MiPerfilScreen({
 
   if (guest) {
     return (
-      <View style={styles.fill}>
-        <LinearGradient colors={[...gradientRn.hero]} style={[styles.header, { paddingTop: Math.max(insets.top, space[16]) }]}>
-          <HeaderDecor />
+      <ImageBackground source={fondoAzul} style={styles.fill} resizeMode="cover">
+        <View style={[styles.header, { paddingTop: Math.max(insets.top, space[16]) }]}>
           <Text style={styles.hTitle}>Perfil</Text>
-        </LinearGradient>
+        </View>
         <View style={styles.pad}>
           <Mute>Entrá para armar tu identidad futbolera.</Mute>
           <View style={{ marginTop: space[16], gap: space[8] }}>
@@ -97,28 +97,29 @@ export function MiPerfilScreen({
             <Button label="Buscar jugadores" variant="secondary" onPress={onSearchPlayers} />
           </View>
         </View>
-      </View>
+      </ImageBackground>
     );
   }
 
   if (loadError) {
     return (
-      <View style={[styles.fill, styles.pad, { paddingTop: insets.top + space[24] }]}>
+      <ImageBackground source={fondoAzul} style={[styles.fill, styles.pad, { paddingTop: insets.top + space[24] }]} resizeMode="cover">
         <EmptyState title="No pudimos cargar tu perfil" body={loadError} action={<Button label="Reintentar" onPress={onRetry} />} />
-      </View>
+      </ImageBackground>
     );
   }
 
   return (
-    <View style={styles.fill}>
-      <ScrollView contentContainerStyle={{ paddingBottom: space[40] }}>
-        <LinearGradient colors={[...gradientRn.hero]} style={[styles.header, { paddingTop: Math.max(insets.top, space[16]) }]}>
-          <HeaderDecor />
+    <ImageBackground source={fondoAzul} style={styles.fill} resizeMode="cover">
+      <ScrollView contentContainerStyle={{ paddingBottom: space[40] + TAB_BAR_CONTENT_INSET }}>
+        <View style={[styles.header, { paddingTop: Math.max(insets.top, space[16]) }]}>
           <View style={styles.headRow}>
             {onOpenNotifs ? <NotifBell unread={unreadNotifs} onPress={onOpenNotifs} /> : <View style={{ width: 48 }} />}
             <Text style={styles.hTitle}>Perfil</Text>
             <IconBtn onPress={onOpenSettings} label="Configuración">
-              <Settings color={colors.gold} size={22} strokeWidth={iconStroke} />
+              <View style={styles.cogDisc}>
+                <Settings color={colors.white} size={18} strokeWidth={2.4} />
+              </View>
             </IconBtn>
           </View>
           <View style={styles.identity}>
@@ -137,7 +138,7 @@ export function MiPerfilScreen({
             {meta ? <Text style={styles.meta}>{meta}</Text> : null}
             {edad != null ? <Text style={styles.meta}>{edad} años</Text> : null}
           </View>
-        </LinearGradient>
+        </View>
 
         <View style={styles.pad}>
           <View style={styles.activity}>
@@ -288,24 +289,36 @@ export function MiPerfilScreen({
               label="Cerrar sesión"
               variant="danger"
               onPress={() =>
-                Alert.alert("¿Cerrar sesión?", "Vas a poder seguir explorando desafíos como invitado.", [
-                  { text: "Seguir conectado", style: "cancel" },
-                  { text: "Cerrar sesión", style: "destructive", onPress: onSignOut },
-                ])
+                showConfirm({
+                  title: "¿Cerrar sesión?",
+                  body: "Vas a poder seguir explorando desafíos como invitado.",
+                  cancelLabel: "Seguir conectado",
+                  confirmLabel: "Cerrar sesión",
+                  danger: true,
+                  onConfirm: onSignOut,
+                })
               }
             />
           </View>
         </View>
       </ScrollView>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: colors.navy },
-  header: { paddingHorizontal: space[16], paddingBottom: space[20], overflow: "hidden" },
+  fill: { flex: 1, backgroundColor: colors.navyDark },
+  header: { paddingHorizontal: space[16], paddingBottom: space[20] },
   headRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   hTitle: { ...typeStyle("h3", colors.white), textAlign: "center" },
+  cogDisc: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#1E6BFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   identity: { alignItems: "center", marginTop: space[12], gap: space[8] },
   nameRow: { flexDirection: "row", alignItems: "center", gap: space[8] },
   name: typeStyle("h2", colors.white),

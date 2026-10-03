@@ -121,6 +121,7 @@ export function PerfilHub({
         onBack={() => {
           setView("search");
         }}
+        onBlocked={() => setView("search")}
         onCreateTeam={onCreateTeam}
         onRequestAuth={onRequestAuth}
       />

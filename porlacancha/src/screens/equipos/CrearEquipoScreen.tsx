@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
-  Alert,
   Image,
+  ImageBackground,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -21,9 +21,11 @@ import { firstZodError } from "@shared/validation/auth";
 import { useAuth } from "../../auth/AuthProvider";
 import { listLocalidades, listPartidos, listProvincias } from "../../lib/equipos";
 import { supabase } from "../../lib/supabase";
+import { showNotice, TAB_BAR_CONTENT_INSET } from "../../ui";
 
 const FORMATOS: MatchFormato[] = ["f5", "f7", "f9", "f11"];
 const BUCKET = "equipo-logos";
+const fondoAzul3 = require("../../../assets/fondo-azul-3.jpeg");
 
 type Lugar = { id: string; nombre: string };
 
@@ -73,7 +75,7 @@ export function CrearEquipoScreen({ onBack, onCreated }: Props) {
   const pickCrest = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert("Permiso", "Necesitamos acceso a tus fotos para el escudo.");
+      showNotice("Permiso", "Necesitamos acceso a tus fotos para el escudo.");
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -132,7 +134,8 @@ export function CrearEquipoScreen({ onBack, onCreated }: Props) {
   };
 
   return (
-    <ScrollView style={styles.page} contentContainerStyle={styles.content}>
+    <ImageBackground source={fondoAzul3} style={styles.page} resizeMode="cover">
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
       <Pressable onPress={onBack}>
         <Text style={styles.back}>← Volver</Text>
       </Pressable>
@@ -184,6 +187,7 @@ export function CrearEquipoScreen({ onBack, onCreated }: Props) {
         <Text style={styles.ctaTxt}>{loading ? "Creando..." : "Crear equipo"}</Text>
       </Pressable>
     </ScrollView>
+    </ImageBackground>
   );
 }
 
@@ -218,7 +222,8 @@ function ChipList({
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: colors.navyDark },
-  content: { paddingHorizontal: 20, paddingTop: 52, paddingBottom: 48 },
+  scroll: { flex: 1, backgroundColor: "transparent" },
+  content: { paddingHorizontal: 20, paddingTop: 52, paddingBottom: 48 + TAB_BAR_CONTENT_INSET },
   back: { color: colors.gold, fontWeight: "700", marginBottom: 12 },
   h1: { fontSize: 26, fontWeight: "800", color: colors.white, marginBottom: 16 },
   label: { fontWeight: "700", color: colors.white, marginBottom: 8, marginTop: 10 },

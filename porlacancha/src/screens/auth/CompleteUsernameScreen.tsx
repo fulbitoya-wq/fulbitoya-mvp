@@ -7,6 +7,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { supabase } from "../../lib/supabase";
 import { BrandLogo, Button, ErrorText, Field, Heading, Lead, Screen } from "../../ui";
 import { typeStyle } from "../../ui/textStyle";
+import { AuthBackBar } from "./AuthBackBar";
 
 export function CompleteUsernameScreen() {
   const { session, profile, mergeProfile, refreshProfile, signOut } = useAuth();
@@ -77,6 +78,7 @@ export function CompleteUsernameScreen() {
 
   return (
     <Screen scroll>
+      <AuthBackBar onBack={() => signOut()} label="Cerrar sesión" />
       <BrandLogo size="sm" />
       <Heading>Elegí tu username</Heading>
       <Lead>

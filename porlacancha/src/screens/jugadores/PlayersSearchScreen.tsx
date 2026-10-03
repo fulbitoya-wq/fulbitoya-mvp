@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FlatList,
+  ImageBackground,
   Modal,
   Pressable,
   ScrollView,
@@ -29,6 +30,8 @@ import { PlayerCompactCard } from "../../ui/players/PlayerCompactCard";
 import { PlayerCompactCardSkeleton } from "../../ui/players/PlayerCompactCardSkeleton";
 import { PlayerRankLegend } from "../../ui/players/PlayerRankLegend";
 import { typeStyle } from "../../ui/textStyle";
+
+const fondoAzul2 = require("../../../assets/fondo-azul-2.jpeg");
 
 const FILTERS: { id: PositionFilter; label: string }[] = [
   { id: "all", label: "Todos" },
@@ -113,7 +116,7 @@ export function PlayersSearchScreen({ onBack, onOpenPlayer, onRequestAuth }: Pro
   };
 
   return (
-    <View style={styles.fill}>
+    <ImageBackground source={fondoAzul2} style={styles.fill} resizeMode="cover">
       <View style={[styles.header, { paddingTop: Math.max(insets.top, space[8]) }]}>
         <View style={styles.headRow}>
           <IconBtn onPress={onBack} label="Volver">
@@ -243,14 +246,13 @@ export function PlayersSearchScreen({ onBack, onOpenPlayer, onRequestAuth }: Pro
           </Pressable>
         </Pressable>
       </Modal>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: colors.navy },
+  fill: { flex: 1, backgroundColor: colors.navyDark },
   header: {
-    backgroundColor: colors.navyDark,
     paddingHorizontal: space[8],
     paddingBottom: space[12],
     minHeight: 88,

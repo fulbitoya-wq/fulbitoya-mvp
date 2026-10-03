@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -35,7 +34,7 @@ import {
 } from "../../lib/perfil";
 import { compressAvatarUri } from "../../lib/compress-avatar";
 import { supabase } from "../../lib/supabase";
-import { Button, IconBtn, PlayerAvatar } from "../../ui";
+import { Button, IconBtn, PlayerAvatar, showAppDialog, showConfirm, showNotice } from "../../ui";
 import { typeStyle } from "../../ui/textStyle";
 import { fontFamily } from "../../lib/fonts";
 
@@ -147,47 +146,61 @@ export function EditarPerfilScreen({ profile, football, onBack, onSaved }: Props
   }, [username, profile.id, profile.username]);
 
   const askLeave = () => {
-    Alert.alert("¿Descartar cambios?", "Si salís ahora, se pierden los cambios que no guardaste.", [
-      { text: "Seguir editando", style: "cancel" },
-      { text: "Descartar", style: "destructive", onPress: onBack },
-    ]);
+    showConfirm({
+      title: "¿Descartar cambios?",
+      body: "Si salís ahora, se pierden los cambios que no guardaste.",
+      cancelLabel: "Seguir editando",
+      confirmLabel: "Descartar",
+      danger: true,
+      onConfirm: onBack,
+    });
   };
 
   const pickPhoto = () => {
-    Alert.alert("Foto de perfil", "La recortamos para que suba liviana.", [
-      {
-        text: "Cámara",
-        onPress: async () => {
-          const perm = await ImagePicker.requestCameraPermissionsAsync();
-          if (!perm.granted) return;
-          const res = await ImagePicker.launchCameraAsync({ quality: 0.7, allowsEditing: true, aspect: [3, 4] });
-          if (!res.canceled && res.assets[0]?.uri) setLocalPhoto(res.assets[0].uri);
+    showAppDialog({
+      title: "Foto de perfil",
+      body: "La recortamos para que suba liviana.",
+      actions: [
+        {
+          label: "Cámara",
+          variant: "primary",
+          onPress: () => {
+            void (async () => {
+              const perm = await ImagePicker.requestCameraPermissionsAsync();
+              if (!perm.granted) return;
+              const res = await ImagePicker.launchCameraAsync({ quality: 0.7, allowsEditing: true, aspect: [3, 4] });
+              if (!res.canceled && res.assets[0]?.uri) setLocalPhoto(res.assets[0].uri);
+            })();
+          },
         },
-      },
-      {
-        text: "Galería",
-        onPress: async () => {
-          const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-          if (!perm.granted) return;
-          const res = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ["images"],
-            quality: 0.7,
-            allowsEditing: true,
-            aspect: [3, 4],
-          });
-          if (!res.canceled && res.assets[0]?.uri) setLocalPhoto(res.assets[0].uri);
+        {
+          label: "Galería",
+          variant: "secondary",
+          onPress: () => {
+            void (async () => {
+              const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+              if (!perm.granted) return;
+              const res = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ["images"],
+                quality: 0.7,
+                allowsEditing: true,
+                aspect: [3, 4],
+              });
+              if (!res.canceled && res.assets[0]?.uri) setLocalPhoto(res.assets[0].uri);
+            })();
+          },
         },
-      },
-      {
-        text: "Eliminar foto",
-        style: "destructive",
-        onPress: () => {
-          setLocalPhoto(null);
-          setAvatar(null);
+        {
+          label: "Eliminar foto",
+          variant: "danger",
+          onPress: () => {
+            setLocalPhoto(null);
+            setAvatar(null);
+          },
         },
-      },
-      { text: "Cancelar", style: "cancel" },
-    ]);
+        { label: "Cancelar", variant: "ghost" },
+      ],
+    });
   };
 
   const uploadPhoto = async (): Promise<string | null> => {
@@ -268,7 +281,7 @@ export function EditarPerfilScreen({ profile, football, onBack, onSaved }: Props
       });
       if (!saved.ok) {
         setError(saved.error);
-        Alert.alert("No se pudo guardar", saved.error);
+        showNotice("No se pudo guardar", saved.error);
         return;
       }
       void hapticMedium();

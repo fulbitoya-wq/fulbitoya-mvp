@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     default: "PorLaCancha",
     template: "%s · PorLaCancha",
   },
-  description: "PorLaCancha. Y algo más. Desafíos de fútbol amateur con premio. Armá tu equipo y jugate.",
+  description: "PorLaCancha conecta equipos con desafíos reales en predios de fútbol amateur. Descargá la app.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://porlacancha.com"),
 };
 

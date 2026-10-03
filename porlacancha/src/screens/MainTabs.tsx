@@ -1,15 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, AppState, Pressable, StyleSheet, Text, View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { AppState, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, gradientRn } from "@shared/design";
+import { colors } from "@shared/design";
 import { useAuth } from "../auth/AuthProvider";
-import { hapticMedium } from "../lib/haptics";
 import { getDesafiosPublicos, type Desafio } from "../lib/desafios";
 import { listInvitacionesRecibidas, listMisEquipos, equiposDondeEsCapitan, type EquipoListItem } from "../lib/equipos";
 import { toggleFavorito } from "../lib/favoritos";
-import { Calendar, Plus, Search, User, Users, iconStroke } from "../lib/icons";
 import { getInscripcionMia, type InscripcionMia } from "../lib/inscripciones";
 import {
   countUnreadNotificaciones,
@@ -28,6 +24,7 @@ import {
 } from "../lib/pending-action";
 import { supabase } from "../lib/supabase";
 import { mensajeErrorEquipo, rpcResponderSolicitud } from "@shared/equipos";
+import { showNotice } from "../ui";
 import { CompletePhoneScreen } from "./auth/CompletePhoneScreen";
 import { CompleteUsernameScreen } from "./auth/CompleteUsernameScreen";
 import { ExplorarScreen } from "./ExplorarScreen";
@@ -44,6 +41,7 @@ import { EquiposListScreen } from "./equipos/EquiposListScreen";
 import { InvitacionesScreen } from "./equipos/InvitacionesScreen";
 import { PlayersSearchScreen } from "./jugadores/PlayersSearchScreen";
 import { PlayerPublicProfileScreen } from "./jugadores/PlayerPublicProfileScreen";
+import { PorLaCanchaBottomTabBar } from "../ui";
 import type { SearchPlayer } from "../lib/player-search";
 
 type Tab = "explore" | "matches" | "teams" | "profile";
@@ -60,7 +58,6 @@ type Props = {
 };
 
 export function MainTabs({ onRequestAuth }: Props) {
-  const insets = useSafeAreaInsets();
   const { session, signOut, profile } = useAuth();
   const loggedIn = Boolean(session?.user);
   const [tab, setTab] = useState<Tab>("explore");
@@ -293,7 +290,7 @@ export function MainTabs({ onRequestAuth }: Props) {
         const res = await rpcResponderSolicitud(supabase, action.solicitudId, true);
         void refreshTeams();
         if (!res.ok) {
-          Alert.alert("Invitación", mensajeErrorEquipo(res.error));
+          showNotice("Invitación", mensajeErrorEquipo(res.error));
         }
         return;
       }
@@ -318,7 +315,6 @@ export function MainTabs({ onRequestAuth }: Props) {
   }, [loggedIn, profile, loading, teamsLoading, items, refreshTeams, equipos]);
 
   const crearPartido = () => {
-    void hapticMedium();
     if (needAuth()) return;
     setPlusOpen(true);
   };
@@ -352,6 +348,7 @@ export function MainTabs({ onRequestAuth }: Props) {
           captainTeams={equiposDondeEsCapitan(equipos)}
           preferredEquipoId={teamsView.fromEquipoId}
           onBack={() => setTeamsView({ name: "search", fromEquipoId: teamsView.fromEquipoId })}
+          onBlocked={() => setTeamsView({ name: "search", fromEquipoId: teamsView.fromEquipoId })}
           onCreateTeam={() => setTeamsView({ name: "create" })}
           onRequestAuth={onRequestAuth}
         />
@@ -403,8 +400,6 @@ export function MainTabs({ onRequestAuth }: Props) {
     );
   };
 
-  const on = (name: Tab) => tab === name;
-
   return (
     <View style={styles.root}>
       <StatusBar style="light" />
@@ -448,6 +443,7 @@ export function MainTabs({ onRequestAuth }: Props) {
             myUserId={profile?.id}
             captainTeams={equiposDondeEsCapitan(equipos)}
             onBack={() => setPlusPlayer(null)}
+            onBlocked={() => setPlusPlayer(null)}
             onCreateTeam={() => {
               setPlusPlayer(null);
               setPlusSearch(false);
@@ -556,58 +552,32 @@ export function MainTabs({ onRequestAuth }: Props) {
       !hideProfileNav &&
       !profileGate &&
       !(tab === "teams" && (teamsView.name === "search" || teamsView.name === "player")) ? (
-        <View style={[styles.nav, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-          <Pressable
-            style={styles.navBtn}
-            onPress={() => {
+        <PorLaCanchaBottomTabBar
+          activeTab={tab}
+          teamsBadge={inbox.length}
+          onTabPress={(next) => {
+            if (next === "explore") {
               setPreferMap(false);
               setTab("explore");
-            }}
-          >
-            <Search color={on("explore") ? colors.gold : colors.textSecondary} size={24} strokeWidth={iconStroke} />
-            <Text style={[styles.navLabel, on("explore") && styles.navLabelOn]}>Explorar</Text>
-          </Pressable>
-          <Pressable
-            style={styles.navBtn}
-            onPress={() => {
+              return;
+            }
+            if (next === "matches") {
               setTab("matches");
-            }}
-          >
-            <Calendar color={on("matches") ? colors.gold : colors.textSecondary} size={24} strokeWidth={iconStroke} />
-            <Text style={[styles.navLabel, on("matches") && styles.navLabelOn]}>Mis partidos</Text>
-          </Pressable>
-          <Pressable style={styles.fabHit} onPress={crearPartido} accessibilityLabel="Armar un desafío">
-            <LinearGradient colors={[...gradientRn.gold]} style={styles.fab}>
-              <Plus color={colors.navyDark} size={28} strokeWidth={2.5} />
-            </LinearGradient>
-          </Pressable>
-          <Pressable
-            style={styles.navBtn}
-            onPress={() => {
+              return;
+            }
+            if (next === "teams") {
               setTab("teams");
               refreshTeams();
-            }}
-          >
-            <Users color={on("teams") ? colors.gold : colors.textSecondary} size={24} strokeWidth={iconStroke} />
-            <Text style={[styles.navLabel, on("teams") && styles.navLabelOn]}>Equipos</Text>
-          </Pressable>
-          <Pressable
-            style={styles.navBtn}
-            onPress={() => {
-              if (!loggedIn) {
-                onRequestAuth();
-                return;
-              }
-              setTab("profile");
-            }}
-            accessibilityLabel={loggedIn ? "Perfil" : "Ingresar"}
-          >
-            <User color={loggedIn && on("profile") ? colors.gold : colors.textSecondary} size={24} strokeWidth={iconStroke} />
-            <Text style={[styles.navLabel, loggedIn && on("profile") && styles.navLabelOn]}>
-              {loggedIn ? "Perfil" : "Ingresar"}
-            </Text>
-          </Pressable>
-        </View>
+              return;
+            }
+            if (!loggedIn) {
+              onRequestAuth();
+              return;
+            }
+            setTab("profile");
+          }}
+          onPlusPress={crearPartido}
+        />
       ) : null}
       <PlusActionsSheet
         visible={plusOpen}
@@ -643,7 +613,7 @@ export function MainTabs({ onRequestAuth }: Props) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.navy },
+  root: { flex: 1, backgroundColor: "transparent" },
   ownerHint: {
     textAlign: "center",
     paddingTop: 48,
@@ -652,30 +622,4 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   body: { flex: 1 },
-  nav: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.navyDark,
-    paddingTop: 10,
-    minHeight: 72,
-  },
-  navBtn: { flex: 1, alignItems: "center", minHeight: 48, justifyContent: "center", gap: 4 },
-  navLabel: { fontSize: 11, fontWeight: "700", color: colors.textSecondary },
-  navLabelOn: { color: colors.gold },
-  fabHit: {
-    width: 64,
-    height: 64,
-    marginBottom: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  fab: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
 });

@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { colors, radius, space } from "@shared/design";
 import { PLAYER_RANKS, type PlayerRange } from "../../lib/player-ranks";
 import { typeStyle } from "../textStyle";
@@ -40,7 +40,7 @@ export function PlayerRankLegend() {
       <Text style={styles.lead}>
         Hoy todos los jugadores reales figuran como nuevos. Estos escudos son solo de muestra.
       </Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.samples}>
+      <View style={styles.samples}>
         {SAMPLES.map((s) => (
           <View key={s.range} style={styles.sample}>
             <PlayerRankShield
@@ -51,7 +51,7 @@ export function PlayerRankLegend() {
             />
           </View>
         ))}
-      </ScrollView>
+      </View>
       <Text style={styles.h}>Rangos</Text>
       {ORDER.map((key) => {
         const r = PLAYER_RANKS[key];
@@ -73,8 +73,14 @@ const styles = StyleSheet.create({
   box: { gap: space[12] },
   h: typeStyle("h3", colors.white),
   lead: typeStyle("caption", colors.textSecondary),
-  samples: { gap: space[12], paddingRight: space[8], paddingBottom: space[8] },
-  sample: { width: 84 },
+  samples: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    rowGap: space[16],
+    paddingVertical: space[8],
+  },
+  sample: { width: "48%", alignItems: "center" },
   row: { flexDirection: "row", gap: space[12], alignItems: "flex-start" },
   swatch: {
     width: 12,

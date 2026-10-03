@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { colors, radius, space } from "@shared/design";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { formatPremioCorto, type Desafio } from "../lib/desafios";
 import { X, iconStroke } from "../lib/icons";
-import { DesafioCard } from "../ui";
+import { DesafioCard, TAB_BAR_CONTENT_INSET } from "../ui";
 
 const BA = {
   latitude: -34.6037,
@@ -39,20 +39,43 @@ export function MapScreen({
 
   return (
     <View style={styles.root}>
-      <MapView style={StyleSheet.absoluteFill} provider={PROVIDER_GOOGLE} initialRegion={BA}>
+      <MapView
+        style={StyleSheet.absoluteFill}
+        provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
+        initialRegion={BA}
+        zoomEnabled
+        scrollEnabled
+        rotateEnabled
+        pitchEnabled
+        zoomTapEnabled
+      >
         {items.map((d) => {
           const active = d.id === selectedId;
+          const lat = Number(d.lat);
+          const lng = Number(d.lng);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+          const premio = formatPremioCorto(Number(d.premio));
+          if (Platform.OS === "ios") {
+            return (
+              <Marker
+                key={d.id}
+                coordinate={{ latitude: lat, longitude: lng }}
+                title={premio}
+                description={d.titulo}
+                pinColor={active ? "#D9A928" : "#8BC9EB"}
+                onPress={() => onSelect(d.id)}
+              />
+            );
+          }
           return (
             <Marker
               key={d.id}
-              coordinate={{ latitude: Number(d.lat), longitude: Number(d.lng) }}
+              coordinate={{ latitude: lat, longitude: lng }}
               onPress={() => onSelect(d.id)}
               tracksViewChanges={false}
             >
               <View style={[styles.pin, active && styles.pinActive]}>
-                <Text style={[styles.pinText, active && styles.pinTextActive]}>
-                  {formatPremioCorto(Number(d.premio))}
-                </Text>
+                <Text style={[styles.pinText, active && styles.pinTextActive]}>{premio}</Text>
               </View>
             </Marker>
           );
@@ -91,7 +114,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: space[16],
     right: space[16],
-    bottom: space[12],
+    bottom: TAB_BAR_CONTENT_INSET,
   },
   close: {
     position: "absolute",

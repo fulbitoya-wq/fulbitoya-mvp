@@ -1,13 +1,59 @@
-import { colors, space } from "@shared/design";
-import { LinearGradient } from "expo-linear-gradient";
+import { colors } from "@shared/design";
 import { useEffect, useRef } from "react";
-import { Animated, Easing, StyleSheet, View } from "react-native";
-import Svg, { Line, Path } from "react-native-svg";
+import { Animated, Easing, ImageBackground, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { BrandLogo } from "./BrandLogo";
+
+const fondoLogin = require("../../assets/fondo-login.jpeg");
 
 type Props = {
   visible: boolean;
 };
+
+function BouncingBall({
+  size,
+  startX,
+  startY,
+  durX,
+  durY,
+}: {
+  size: number;
+  startX: number;
+  startY: number;
+  durX: number;
+  durY: number;
+}) {
+  const { width, height } = useWindowDimensions();
+  const x = useRef(new Animated.Value(startX)).current;
+  const y = useRef(new Animated.Value(startY)).current;
+  const maxX = Math.max(8, width - size - 8);
+  const maxY = Math.max(8, height - size - 8);
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(x, { toValue: maxX, duration: durX, easing: Easing.linear, useNativeDriver: true }),
+        Animated.timing(x, { toValue: 8, duration: durX, easing: Easing.linear, useNativeDriver: true }),
+      ])
+    ).start();
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(y, { toValue: maxY, duration: durY, easing: Easing.linear, useNativeDriver: true }),
+        Animated.timing(y, { toValue: 8, duration: durY, easing: Easing.linear, useNativeDriver: true }),
+      ])
+    ).start();
+  }, [durX, durY, maxX, maxY, x, y]);
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[styles.ball, { width: size, height: size, transform: [{ translateX: x }, { translateY: y }] }]}
+    >
+      <Text style={{ fontSize: size * 0.72, lineHeight: size }} accessibilityLabel="Pelota">
+        ⚽
+      </Text>
+    </Animated.View>
+  );
+}
 
 export function BootSplash({ visible }: Props) {
   const opacity = useRef(new Animated.Value(1)).current;
@@ -56,45 +102,51 @@ export function BootSplash({ visible }: Props) {
 
   return (
     <Animated.View pointerEvents={visible ? "auto" : "none"} style={[StyleSheet.absoluteFill, { opacity }]}>
-      <LinearGradient colors={[colors.navyDark, colors.navy]} style={styles.fill}>
-        <View style={styles.center}>
-          <Animated.View style={[styles.haloWrap, { opacity: glow }]}>
-            <View style={styles.halo} />
-          </Animated.View>
-          <Svg pointerEvents="none" width={320} height={320} style={styles.pitch}>
-            <Line x1="40" y1="160" x2="280" y2="160" stroke={colors.gold} strokeWidth="1" opacity="0.12" />
-            <Line x1="160" y1="48" x2="160" y2="272" stroke={colors.gold} strokeWidth="1" opacity="0.1" />
-            <Path
-              d="M70 160 C 70 110, 250 110, 250 160 C 250 210, 70 210, 70 160"
-              stroke={colors.gold}
-              strokeWidth="1"
-              fill="none"
-              opacity="0.1"
-            />
-          </Svg>
-          <Animated.View style={[styles.logo, { transform: [{ scale }] }]}>
-            <BrandLogo size="lg" />
-          </Animated.View>
+      <ImageBackground source={fondoLogin} style={styles.fill} resizeMode="cover">
+        <View style={styles.dim}>
+          <View pointerEvents="none" style={styles.balls}>
+            <BouncingBall size={44} startX={20} startY={80} durX={2200} durY={1700} />
+            <BouncingBall size={34} startX={200} startY={40} durX={1800} durY={2400} />
+            <BouncingBall size={52} startX={80} startY={320} durX={2600} durY={1500} />
+          </View>
+          <View style={styles.center}>
+            <Animated.View pointerEvents="none" style={[styles.halo, { opacity: glow }]} />
+            <Animated.View style={[styles.logo, { transform: [{ scale }] }]}>
+              <BrandLogo size="splash" />
+            </Animated.View>
+          </View>
         </View>
-      </LinearGradient>
+      </ImageBackground>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, alignItems: "center", justifyContent: "center" },
-  center: { alignItems: "center", justifyContent: "center" },
-  haloWrap: {
-    position: "absolute",
-    alignSelf: "center",
+  fill: { flex: 1, backgroundColor: colors.navyDark },
+  dim: {
+    flex: 1,
+    backgroundColor: "rgba(0,27,68,0.42)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  balls: { ...StyleSheet.absoluteFillObject },
+  ball: { position: "absolute", left: 0, top: 0, alignItems: "center", justifyContent: "center" },
+  center: {
+    width: 320,
+    height: 320,
+    alignItems: "center",
+    justifyContent: "center",
   },
   halo: {
+    position: "absolute",
+    top: 10,
+    left: 10,
     width: 300,
     height: 300,
     borderRadius: 150,
-    backgroundColor: colors.sky,
-    opacity: 0.12,
+    backgroundColor: "rgba(247,245,239,0.18)",
   },
-  pitch: { position: "absolute" },
-  logo: { paddingHorizontal: space[20] },
+  logo: {
+    zIndex: 2,
+  },
 });

@@ -40,13 +40,13 @@ El plantel de un equipo puede ver nombre y username de los compañeros. Un enlac
 
 Podés pedir acceso, rectificación, actualización o supresión de tus datos, y oponerte a un tratamiento, en los términos de la Ley 25.326 de Protección de Datos Personales y normas complementarias.
 
-Para ejercerlos: escribí a soporte@porlacancha.com o usá la pantalla de eliminar cuenta en la app / el formulario en porlacancha.com/eliminar-cuenta.
+Para ejercerlos: escribí a soporte@porlacancha.com o usá Eliminar mi cuenta en la app (Configuración → Seguridad). En el sitio, porlacancha.com/eliminar-cuenta te indica el mismo camino.
 
 La Dirección Nacional de Protección de Datos Personales (AAIP) es el órgano de control en Argentina.
 
 ## Conservación
 
-Mientras tu cuenta esté activa. Si pedís la baja, borramos o anonimizamos lo que la ley nos permite; podemos conservar un mínimo (por ejemplo el email de la solicitud de baja o comprobantes de pago) el tiempo exigido por normas fiscales o de consumidores.
+Mientras tu cuenta esté activa. Si la borrás desde la app, eliminamos el login y el perfil en el momento. Podemos conservar un mínimo exigido por ley (por ejemplo comprobantes si en el futuro hay un cobro).
 
 ## Contacto
 

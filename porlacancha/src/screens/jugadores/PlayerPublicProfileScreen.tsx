@@ -1,17 +1,24 @@
 import { useEffect, useState } from "react";
-import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { ImageBackground, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, PLAYER_RANKS, space } from "@shared/design";
 import { mensajeErrorEquipo, rpcInvitarJugador } from "@shared/equipos";
 import type { EquipoListItem } from "../../lib/equipos";
 import type { SearchPlayer } from "../../lib/player-search";
 import { formatArs } from "../../lib/player-ranks";
-import { ChevronLeft, Heart, Share2, iconStroke } from "../../lib/icons";
+import { ChevronLeft, Heart, MoreHorizontal, Share2, Users, iconStroke } from "../../lib/icons";
 import { hapticLight } from "../../lib/haptics";
 import { listMisFavoritos, toggleFavorito } from "../../lib/favoritos";
+import {
+  bloquearUsuario,
+  desbloquearUsuario,
+  estaBloqueado,
+  reportarUsuario,
+  type MotivoReporte,
+} from "../../lib/moderacion";
 import { setPendingAction } from "../../lib/pending-action";
 import { supabase } from "../../lib/supabase";
-import { Button, Card, IconBtn, Mute } from "../../ui";
+import { Button, Card, IconBtn, Mute, showConfirm, showNotice } from "../../ui";
 import { PlayerSeekingChip } from "../../ui/players/PlayerSeekingChip";
 import { PlayerRankShield } from "../../ui/players/PlayerRankShield";
 import { PlayerPositionChip } from "../../ui/players/PlayerPositionChip";
@@ -20,6 +27,9 @@ import { PlayerTeamMiniBadge } from "../../ui/players/PlayerTeamMiniBadge";
 import { typeStyle } from "../../ui/textStyle";
 import { fontFamily } from "../../lib/fonts";
 import { InviteTeamSheet } from "./InviteTeamSheet";
+import { ReportBlockSheet } from "./ReportBlockSheet";
+
+const fondoAzul = require("../../../assets/fondo-azul.jpeg");
 
 type Props = {
   player: SearchPlayer;
@@ -29,6 +39,7 @@ type Props = {
   onBack: () => void;
   onCreateTeam: () => void;
   onRequestAuth?: () => void;
+  onBlocked?: () => void;
 };
 
 export function PlayerPublicProfileScreen({
@@ -39,6 +50,7 @@ export function PlayerPublicProfileScreen({
   onBack,
   onCreateTeam,
   onRequestAuth,
+  onBlocked,
 }: Props) {
   const insets = useSafeAreaInsets();
   const rank = PLAYER_RANKS[player.range];
@@ -47,13 +59,18 @@ export function PlayerPublicProfileScreen({
   const [picker, setPicker] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [favorite, setFavorite] = useState(false);
+  const [moderation, setModeration] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [modBusy, setModBusy] = useState(false);
 
   useEffect(() => {
     if (!myUserId || isSelf) {
       setFavorite(false);
+      setBlocked(false);
       return;
     }
     void listMisFavoritos().then((ids) => setFavorite(ids.includes(player.id)));
+    void estaBloqueado(player.id).then(setBlocked);
   }, [myUserId, isSelf, player.id]);
 
   const onHeart = async () => {
@@ -82,10 +99,10 @@ export function PlayerPublicProfileScreen({
     setInviting(false);
     setPicker(false);
     if (!res.ok) {
-      Alert.alert("Invitación", mensajeErrorEquipo(res.error));
+      showNotice("Invitación", mensajeErrorEquipo(res.error));
       return;
     }
-    Alert.alert("Listo", `Le mandamos la invitación a ${player.username ? `@${player.username}` : player.name}.`);
+    showNotice("Listo", `Le mandamos la invitación a ${player.username ? `@${player.username}` : player.name}.`);
   };
 
   const onInvite = () => {
@@ -99,10 +116,13 @@ export function PlayerPublicProfileScreen({
       return;
     }
     if (captainTeams.length === 0) {
-      Alert.alert("Invitar a mi equipo", "Tenés que ser capitán de un equipo para invitar.", [
-        { text: "Cancelar", style: "cancel" },
-        { text: "Crear equipo", onPress: onCreateTeam },
-      ]);
+      showConfirm({
+        title: "Invitar a mi equipo",
+        body: "Tenés que ser capitán de un equipo para invitar.",
+        cancelLabel: "Cancelar",
+        confirmLabel: "Crear equipo",
+        onConfirm: onCreateTeam,
+      });
       return;
     }
     if (captainTeams.length === 1) {
@@ -112,29 +132,98 @@ export function PlayerPublicProfileScreen({
     setPicker(true);
   };
 
+  const needAuth = () => {
+    if (!myUserId) {
+      onRequestAuth?.();
+      return true;
+    }
+    return false;
+  };
+
+  const onOpenModeration = () => {
+    if (isSelf) return;
+    if (needAuth()) return;
+    setModeration(true);
+  };
+
+  const onReport = (motivo: MotivoReporte, detalle: string) => {
+    setModBusy(true);
+    void reportarUsuario(player.id, motivo, detalle).then((res) => {
+      setModBusy(false);
+      if (!res.ok) {
+        showNotice("Denuncia", res.error);
+        return;
+      }
+      setModeration(false);
+      showNotice("Denuncia enviada", "La revisamos. Gracias por avisar.");
+    });
+  };
+
+  const onBlock = () => {
+    showConfirm({
+      title: "Bloquear",
+      body: "No vas a ver más a esta persona en la búsqueda. Podés desbloquearla después en Configuración.",
+      cancelLabel: "Cancelar",
+      confirmLabel: "Bloquear",
+      danger: true,
+      onConfirm: () => {
+        setModBusy(true);
+        void bloquearUsuario(player.id).then((res) => {
+          setModBusy(false);
+          if (!res.ok) {
+            showNotice("No se pudo bloquear", res.error);
+            return;
+          }
+          setBlocked(true);
+          setFavorite(false);
+          setModeration(false);
+          onBlocked?.();
+        });
+      },
+    });
+  };
+
+  const onUnblock = () => {
+    setModBusy(true);
+    void desbloquearUsuario(player.id).then((res) => {
+      setModBusy(false);
+      if (!res.ok) {
+        showNotice("No se pudo desbloquear", res.error);
+        return;
+      }
+      setBlocked(false);
+      setModeration(false);
+    });
+  };
+
   const positions = [player.primaryPosition, ...player.secondaryPositions].filter(Boolean);
 
   return (
-    <View style={styles.fill}>
+    <ImageBackground source={fondoAzul} style={styles.fill} resizeMode="cover">
       <View style={[styles.bar, { paddingTop: Math.max(insets.top, space[8]) }]}>
         <IconBtn onPress={onBack} label="Volver">
           <ChevronLeft color={colors.gold} size={22} strokeWidth={iconStroke} />
         </IconBtn>
         <Text style={styles.barT}>Ficha de jugador</Text>
         {!isSelf ? (
-          <Pressable
-            onPress={() => void onHeart()}
-            accessibilityRole="button"
-            accessibilityLabel={favorite ? "Sacar de favoritos" : "Agregar a favoritos"}
-            style={styles.heartBtn}
-          >
-            <Heart
-              color={favorite ? colors.gold : colors.white}
-              fill={favorite ? colors.gold : "none"}
-              size={22}
-              strokeWidth={iconStroke}
-            />
-          </Pressable>
+          <View style={styles.barRight}>
+            <Pressable
+              onPress={() => void onHeart()}
+              accessibilityRole="button"
+              accessibilityLabel={favorite ? "Sacar de favoritos" : "Agregar a favoritos"}
+              style={styles.heartBtn}
+            >
+              <Heart
+                color={favorite ? colors.gold : colors.white}
+                fill={favorite ? colors.gold : "none"}
+                size={22}
+                strokeWidth={iconStroke}
+              />
+            </Pressable>
+            <IconBtn onPress={onOpenModeration} label="Denunciar o bloquear">
+              <MoreHorizontal color={colors.white} size={22} strokeWidth={iconStroke} />
+            </IconBtn>
+          </View>
         ) : (
           <View style={{ width: 48 }} />
         )}
@@ -155,9 +244,15 @@ export function PlayerPublicProfileScreen({
                 {player.level}
               </Text>
             )}
-            <PlayerRankBadge range={player.range} compact={false} />
+            <View>
+              <PlayerRankBadge range={player.range} compact={false} />
+            </View>
             {isNew ? <Text style={styles.newHint}>Nuevo en PorLaCancha</Text> : null}
-            {player.buscaEquipo ? <PlayerSeekingChip /> : null}
+            {player.buscaEquipo ? (
+              <View>
+                <PlayerSeekingChip />
+              </View>
+            ) : null}
             <Text style={styles.playHow}>
               {player.modoJuego === "cobro_por_partido" && player.tarifaPartido != null
                 ? `Juega por ${formatArs(player.tarifaPartido)}`
@@ -210,44 +305,59 @@ export function PlayerPublicProfileScreen({
 
       <View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, space[16]) }]}>
         <View style={styles.actions}>
-          <View style={{ flex: 1 }}>
-            <Button
-              label="Compartir ficha"
-              variant="secondary"
-              accent="success"
-              icon={<Share2 color={colors.white} size={18} strokeWidth={iconStroke} />}
-              onPress={share}
-            />
-          </View>
+          <Pressable
+            onPress={share}
+            accessibilityRole="button"
+            accessibilityLabel="Compartir"
+            style={styles.shareBtn}
+          >
+            <Share2 color={colors.white} size={20} strokeWidth={iconStroke} />
+          </Pressable>
           {!isSelf ? (
-            <View style={{ flex: 1 }}>
-              <Button label="Invitar a mi equipo" variant="primary" loading={inviting} onPress={onInvite} />
-            </View>
+            <Button
+              label="Invitar a mi equipo"
+              variant="primary"
+              loading={inviting}
+              onPress={onInvite}
+              fill
+              icon={<Users color={colors.navyDark} size={18} strokeWidth={iconStroke} />}
+            />
           ) : null}
         </View>
       </View>
 
       <InviteTeamSheet visible={picker} teams={captainTeams} onClose={() => setPicker(false)} onPick={(id) => void sendInvite(id)} />
-    </View>
+      <ReportBlockSheet
+        visible={moderation}
+        blocked={blocked}
+        busy={modBusy}
+        onClose={() => setModeration(false)}
+        onReport={onReport}
+        onBlock={onBlock}
+        onUnblock={onUnblock}
+      />
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: colors.navy },
-  bar: { flexDirection: "row", alignItems: "center", backgroundColor: colors.navyDark, paddingHorizontal: space[8] },
+  fill: { flex: 1, backgroundColor: colors.navyDark },
+  bar: { flexDirection: "row", alignItems: "center", paddingHorizontal: space[8] },
   barT: { ...typeStyle("h3", colors.white), flex: 1, textAlign: "center" },
+  barRight: { flexDirection: "row", alignItems: "center" },
   heartBtn: { width: 48, height: 48, alignItems: "center", justifyContent: "center" },
   hero: { alignItems: "center", gap: space[12], marginBottom: space[20] },
-  heroTxt: { alignItems: "center", gap: 6 },
+  heroTxt: { width: "100%", alignItems: "center", gap: 6 },
   heroLv: {
     fontFamily: fontFamily.numBold,
     fontSize: 48,
     lineHeight: 50,
+    textAlign: "center",
   },
-  newHint: typeStyle("caption", colors.sky),
-  playHow: typeStyle("bodySmall", colors.goldLight),
-  name: typeStyle("h2", colors.white),
-  user: typeStyle("bodySmall", colors.sky),
+  newHint: { ...typeStyle("caption", colors.sky), textAlign: "center" },
+  playHow: { ...typeStyle("bodySmall", colors.goldLight), textAlign: "center" },
+  name: { ...typeStyle("h2", colors.white), textAlign: "center" },
+  user: { ...typeStyle("bodySmall", colors.sky), textAlign: "center" },
   pos: { flexDirection: "row", flexWrap: "wrap", gap: 6, justifyContent: "center", marginTop: 4 },
   infoRow: { flexDirection: "row", gap: space[8] },
   infoCard: { flex: 1 },
@@ -267,10 +377,19 @@ const styles = StyleSheet.create({
   bottom: {
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    backgroundColor: colors.navyDark,
+    backgroundColor: "rgba(0,27,68,0.72)",
     paddingHorizontal: space[16],
     paddingTop: space[12],
     gap: space[8],
   },
-  actions: { flexDirection: "row", gap: space[8] },
+  actions: { flexDirection: "row", alignItems: "center", gap: space[8] },
+  shareBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: colors.success,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
 });

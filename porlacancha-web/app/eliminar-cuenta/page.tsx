@@ -35,17 +35,14 @@ export default function EliminarCuentaPage() {
 
       <h2 className="mt-6 text-sm font-extrabold text-plc-gold">Desde la app</h2>
       <ol className="mt-2 list-decimal space-y-2 pl-5 text-sm leading-6 text-plc-text-secondary">
-        <li>Abrí PorLaCancha e iniciá sesión con el email de la cuenta.</li>
-        <li>Cerrar sesión (tab Equipos → Salir) no borra tus datos.</li>
-        <li>
-          Todavía no hay un botón de borrar adentro de la app. Para pedir la baja, usá el formulario
-          de esta página o escribinos a soporte.
-        </li>
+        <li>Abrí PorLaCancha e iniciá sesión.</li>
+        <li>Configuración → Seguridad → Eliminar mi cuenta.</li>
+        <li>Cerrar sesión no borra nada. La baja desde ese botón sí, al momento.</li>
       </ol>
 
-      <h2 className="mt-8 text-sm font-extrabold text-plc-gold">Pedido por email</h2>
+      <h2 className="mt-8 text-sm font-extrabold text-plc-gold">Si no podés entrar a la app</h2>
       <p className="mt-2 text-sm leading-6 text-plc-text-secondary">
-        Dejamos registrada la solicitud. La resolvemos a mano hasta que la baja esté en la app.
+        Dejá el email y lo vemos a mano. El camino que pide Apple es el de la app.
       </p>
       <form onSubmit={submit} className="mt-4 space-y-3">
         {err ? <p className="text-sm text-plc-danger">{err}</p> : null}

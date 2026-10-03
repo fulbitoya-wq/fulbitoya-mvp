@@ -2,7 +2,7 @@ import { AuthProvider, useAuth } from "./src/auth/AuthProvider";
 import { AuthStack } from "./src/screens/auth/AuthStack";
 import { LoggedInShell } from "./src/screens/LoggedInShell";
 import { useAppFonts } from "./src/lib/fonts";
-import { BootSplash } from "./src/ui";
+import { BootSplash, AppDialogHost } from "./src/ui";
 import { colors } from "@shared/design";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -42,7 +42,7 @@ function BootGate({ children }: { children: ReactNode }) {
     const t = setTimeout(() => {
       minElapsed.current = true;
       if (!loadingRef.current) setShow(false);
-    }, 1700);
+    }, 2400);
     return () => clearTimeout(t);
   }, []);
 
@@ -83,6 +83,7 @@ export default function App() {
         <BootGate>
           <Root />
         </BootGate>
+        <AppDialogHost />
       </AuthProvider>
     </SafeAreaProvider>
   );

@@ -16,9 +16,10 @@ type Props = {
   disabled?: boolean;
   icon?: ReactNode;
   accent?: "default" | "success";
+  fill?: boolean;
 };
 
-const ctaHeight = space[48] + space[8];
+const ctaHeight = 56;
 
 export function Button({
   label,
@@ -28,6 +29,7 @@ export function Button({
   disabled,
   icon,
   accent = "default",
+  fill,
 }: Props) {
   const off = disabled || loading;
   const onTap = () => {
@@ -35,23 +37,27 @@ export function Button({
     onPress();
   };
 
-  const inner = loading ? (
-    <ActivityIndicator color={variant === "primary" ? colors.navyDark : colors.gold} />
-  ) : (
-    <View style={styles.row}>
-      {icon}
-      <Text
-        style={[
-          styles.label,
-          variant === "primary" && styles.labelOnGold,
-          variant === "secondary" && styles.labelSecondary,
-          variant === "danger" && styles.labelDanger,
-        ]}
-      >
-        {label}
-      </Text>
-    </View>
-  );
+  const inner = (onGold: boolean) =>
+    loading ? (
+      <ActivityIndicator color={onGold ? colors.navyDark : colors.gold} />
+    ) : (
+      <View style={styles.row}>
+        {icon}
+        <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
+          style={[
+            styles.label,
+            variant === "primary" && styles.labelOnGold,
+            variant === "secondary" && styles.labelSecondary,
+            variant === "danger" && styles.labelDanger,
+          ]}
+        >
+          {label}
+        </Text>
+      </View>
+    );
 
   return (
     <Pressable
@@ -59,27 +65,35 @@ export function Button({
       disabled={off}
       onPress={onTap}
       style={({ pressed }) => [
+        fill && styles.fill,
         off && styles.off,
         pressed && !off && { transform: [{ scale: motion.pressScale }] },
       ]}
     >
-      {variant === "primary" ? (
-        <LinearGradient colors={[...gradientRn.gold]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.base}>
-          {inner}
-        </LinearGradient>
-      ) : (
-        <View
-          style={[
-            styles.base,
-            variant === "secondary" && styles.secondary,
-            variant === "secondary" && accent === "success" && styles.secondarySuccess,
-            variant === "ghost" && styles.ghost,
-            variant === "danger" && styles.danger,
-          ]}
-        >
-          {inner}
-        </View>
-      )}
+      {({ pressed }) =>
+        variant === "primary" ? (
+          <LinearGradient
+            colors={pressed && !off ? [colors.gold, colors.goldDark] : [...gradientRn.gold]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.base, styles.primary, fill && styles.fill]}
+          >
+            {inner(true)}
+          </LinearGradient>
+        ) : (
+          <View
+            style={[
+              styles.base,
+              variant === "secondary" && styles.secondary,
+              variant === "secondary" && accent === "success" && styles.secondarySuccess,
+              variant === "ghost" && styles.ghost,
+              variant === "danger" && styles.danger,
+            ]}
+          >
+            {inner(false)}
+          </View>
+        )
+      }
     </Pressable>
   );
 }
@@ -88,9 +102,18 @@ const styles = StyleSheet.create({
   base: {
     minHeight: ctaHeight,
     borderRadius: radius.pill,
-    paddingHorizontal: space[24],
+    paddingHorizontal: space[16],
     alignItems: "center",
     justifyContent: "center",
+  },
+  primary: {
+    height: 56,
+    borderRadius: 28,
+    shadowColor: colors.gold,
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   secondary: {
     backgroundColor: "transparent",
@@ -110,6 +133,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(239,68,68,0.35)",
     borderRadius: radius.lg,
   },
+  fill: { flex: 1 },
   off: { opacity: 0.55 },
   row: { flexDirection: "row", alignItems: "center", gap: space[8] },
   label: {

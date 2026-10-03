@@ -1,11 +1,12 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { ImageBackground, Linking, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, radius, space } from "@shared/design";
 import type { JugateLaProfile } from "../../auth/AuthProvider";
-import { solicitarEliminacionCuenta, updatePassword } from "../../lib/account";
+import { eliminarMiCuenta, updatePassword } from "../../lib/account";
 import { hapticMedium } from "../../lib/haptics";
 import {
+  Ban,
   Bell,
   ChevronLeft,
   ChevronRight,
@@ -19,6 +20,7 @@ import {
   iconStroke,
 } from "../../lib/icons";
 import type { FootballProfile } from "../../lib/perfil";
+import { listUsuariosBloqueados, desbloquearUsuario, type BloqueadoItem } from "../../lib/moderacion";
 import {
   NOTIF_LABELS,
   NOTIF_TIPOS,
@@ -26,15 +28,16 @@ import {
   setPreferenciaNotificacion,
   type NotifTipo,
 } from "../../lib/notificaciones";
-import { Button, Card, Chip, IconBtn, Mute } from "../../ui";
+import { Button, Card, Chip, IconBtn, Mute, showConfirm, showNotice } from "../../ui";
 import { typeStyle } from "../../ui/textStyle";
 import { fontFamily } from "../../lib/fonts";
 
 const TERMINOS = "https://porlacancha.com/terminos";
 const PRIVACIDAD = "https://porlacancha.com/privacidad";
 const SOPORTE = "https://porlacancha.com/soporte";
+const fondoAzul3 = require("../../../assets/fondo-azul-3.jpeg");
 
-type Panel = "home" | "privacy" | "security" | "password" | "notifications";
+type Panel = "home" | "privacy" | "security" | "password" | "notifications" | "blocked";
 
 type Props = {
   profile: JugateLaProfile;
@@ -88,10 +91,16 @@ export function ConfiguracionScreen({ profile, football, email, onBack, onEdit, 
   const [passErr, setPassErr] = useState<string | null>(null);
   const [passBusy, setPassBusy] = useState(false);
   const [prefs, setPrefs] = useState<Record<NotifTipo, boolean> | null>(null);
+  const [blocked, setBlocked] = useState<BloqueadoItem[] | null>(null);
 
   useEffect(() => {
     if (panel !== "notifications") return;
     void listPreferenciasNotificacion().then(setPrefs);
+  }, [panel]);
+
+  useEffect(() => {
+    if (panel !== "blocked") return;
+    void listUsuariosBloqueados().then(setBlocked);
   }, [panel]);
 
   const logout = () => {
@@ -113,36 +122,29 @@ export function ConfiguracionScreen({ profile, football, email, onBack, onEdit, 
       setPassErr(res.error);
       return;
     }
-    Alert.alert("Listo", "Tu contraseña se actualizó.");
+    showNotice("Listo", "Tu contraseña se actualizó.");
     setPass1("");
     setPass2("");
     setPanel("security");
   };
 
   const pedirBaja = () => {
-    Alert.alert(
-      "Eliminar mi cuenta",
-      "Se abre una solicitud. En hasta 30 días borramos tus datos de PorLaCancha. Mientras tanto podés seguir usando la app. No se cancela solo.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Pedir la baja",
-          style: "destructive",
-          onPress: () => {
-            void solicitarEliminacionCuenta().then((res) => {
-              if (!res.ok) {
-                Alert.alert("No se pudo pedir", res.error);
-                return;
-              }
-              Alert.alert(
-                res.yaPendiente ? "Ya habías pedido la baja" : "Solicitud enviada",
-                "En hasta 30 días procesamos la eliminación. Si cambiaste de idea, escribinos a soporte."
-              );
-            });
-          },
-        },
-      ]
-    );
+    showConfirm({
+      title: "Eliminar mi cuenta",
+      body: "Se borra ahora: login, perfil, favoritos y denuncias. No se puede deshacer. Si sos capitán de un equipo con más gente, transferí la capitanía antes.",
+      cancelLabel: "Cancelar",
+      confirmLabel: "Borrar cuenta",
+      danger: true,
+      onConfirm: () => {
+        void eliminarMiCuenta().then((res) => {
+          if (!res.ok) {
+            showNotice("No se pudo borrar", res.error);
+            return;
+          }
+          void onSignOut();
+        });
+      },
+    });
   };
 
   const title =
@@ -154,7 +156,9 @@ export function ConfiguracionScreen({ profile, football, email, onBack, onEdit, 
           ? "Cambiar contraseña"
           : panel === "notifications"
             ? "Notificaciones"
-            : "Configuración";
+            : panel === "blocked"
+              ? "Usuarios bloqueados"
+              : "Configuración";
 
   const goBack = () => {
     if (panel === "password") {
@@ -169,7 +173,7 @@ export function ConfiguracionScreen({ profile, football, email, onBack, onEdit, 
   };
 
   return (
-    <View style={styles.fill}>
+    <ImageBackground source={fondoAzul3} style={styles.fill} resizeMode="cover">
       <View style={[styles.bar, { paddingTop: Math.max(insets.top, space[8]) }]}>
         <IconBtn onPress={goBack} label="Volver">
           <ChevronLeft color={colors.gold} size={22} strokeWidth={iconStroke} />
@@ -202,6 +206,11 @@ export function ConfiguracionScreen({ profile, football, email, onBack, onEdit, 
                 icon={<Bell color={colors.sky} size={18} strokeWidth={iconStroke} />}
               />
               <Row label="Privacidad" onPress={() => setPanel("privacy")} icon={<Shield color={colors.sky} size={18} strokeWidth={iconStroke} />} />
+              <Row
+                label="Usuarios bloqueados"
+                onPress={() => setPanel("blocked")}
+                icon={<Ban color={colors.sky} size={18} strokeWidth={iconStroke} />}
+              />
               <Row label="Seguridad" onPress={() => setPanel("security")} icon={<Lock color={colors.sky} size={18} strokeWidth={iconStroke} />} />
               <Row
                 label="Métodos de pago"
@@ -241,6 +250,40 @@ export function ConfiguracionScreen({ profile, football, email, onBack, onEdit, 
           </Card>
         ) : null}
 
+        {panel === "blocked" ? (
+          <Card>
+            <Text style={styles.h}>Quién no te ve</Text>
+            <Mute>Si bloqueás a alguien, no aparece en tu búsqueda ni te puede invitar. Las denuncias van aparte, desde su ficha (los tres puntos).</Mute>
+            <View style={{ marginTop: space[16] }}>
+              {blocked == null ? (
+                <Mute>Cargando…</Mute>
+              ) : blocked.length === 0 ? (
+                <Mute>No bloqueaste a nadie.</Mute>
+              ) : (
+                blocked.map((u) => (
+                  <View key={u.id} style={styles.prefRow}>
+                    <Text style={styles.prefLab}>{u.username ? `@${u.username}` : u.nombre || "Jugador"}</Text>
+                    <Pressable
+                      onPress={() => {
+                        void desbloquearUsuario(u.id).then((res) => {
+                          if (!res.ok) {
+                            showNotice("No se pudo desbloquear", res.error);
+                            return;
+                          }
+                          setBlocked((list) => (list ? list.filter((x) => x.id !== u.id) : list));
+                        });
+                      }}
+                      accessibilityRole="button"
+                    >
+                      <Text style={styles.secA}>Desbloquear</Text>
+                    </Pressable>
+                  </View>
+                ))
+              )}
+            </View>
+          </Card>
+        ) : null}
+
         {panel === "notifications" ? (
           <Card>
             <Mute>Avisos dentro de la app. Push (al celular) todavía no.</Mute>
@@ -255,7 +298,7 @@ export function ConfiguracionScreen({ profile, football, email, onBack, onEdit, 
                         void setPreferenciaNotificacion(tipo, v).then((ok) => {
                           if (!ok) {
                             setPrefs((p) => (p ? { ...p, [tipo]: !v } : p));
-                            Alert.alert("No se pudo guardar", "Probá de nuevo en un rato.");
+                            showNotice("No se pudo guardar", "Probá de nuevo en un rato.");
                           }
                         });
                       }}
@@ -278,7 +321,7 @@ export function ConfiguracionScreen({ profile, football, email, onBack, onEdit, 
             <Pressable onPress={pedirBaja} style={styles.deleteRow} accessibilityRole="button">
               <Text style={styles.deleteT}>Eliminar mi cuenta</Text>
             </Pressable>
-            <Mute>La baja no es inmediata: queda una solicitud y la procesamos en hasta 30 días.</Mute>
+            <Mute>La baja es inmediata. No se puede deshacer. Los equipos donde sos el único miembro se cierran.</Mute>
           </Card>
         ) : null}
 
@@ -320,12 +363,12 @@ export function ConfiguracionScreen({ profile, football, email, onBack, onEdit, 
           <Button label="Cerrar sesión" variant="danger" onPress={logout} />
         </View>
       </Modal>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: colors.navy },
+  fill: { flex: 1, backgroundColor: colors.navyDark },
   bar: { flexDirection: "row", alignItems: "center", paddingHorizontal: space[8] },
   title: { ...typeStyle("h3", colors.white), flex: 1, textAlign: "center" },
   cardH: { flexDirection: "row", alignItems: "center", gap: space[8], marginBottom: space[8] },
@@ -351,6 +394,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   prefLab: { ...typeStyle("body", colors.white), flex: 1 },
+  secA: typeStyle("bodySmall", colors.gold),
   logout: {
     marginTop: space[24],
     minHeight: 56,

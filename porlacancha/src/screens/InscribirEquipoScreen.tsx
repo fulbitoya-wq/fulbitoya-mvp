@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, radius, space } from "@shared/design";
 import type { EquipoListItem, MiembroPlantel } from "../lib/equipos";
@@ -12,7 +12,7 @@ import {
   type InscripcionMia,
 } from "../lib/inscripciones";
 import { ChevronLeft, iconStroke } from "../lib/icons";
-import { Button, EmptyState, IconBtn, Mute } from "../ui";
+import { Button, EmptyState, IconBtn, Mute, showConfirm, showNotice } from "../ui";
 import { typeStyle } from "../ui/textStyle";
 
 type Props = {
@@ -65,10 +65,10 @@ export function InscribirEquipoScreen({ desafio, captainTeams, existing, onBack,
       : await inscribirEquipo(desafio.id, equipoId, selected);
     setBusy(false);
     if (!res.ok) {
-      Alert.alert("No se pudo guardar", res.error);
+      showNotice("No se pudo guardar", res.error);
       return;
     }
-    Alert.alert(
+    showNotice(
       existing ? "Convocados actualizados" : "Equipo inscripto",
       existing ? "Quedó la nueva lista." : "Sin cobro por ahora: la inscripción quedó confirmada."
     );
@@ -77,22 +77,22 @@ export function InscribirEquipoScreen({ desafio, captainTeams, existing, onBack,
 
   const cancelar = () => {
     if (!existing) return;
-    Alert.alert("Cancelar inscripción", "El lugar queda libre. Los convocados se enteran por el aviso.", [
-      { text: "Volver", style: "cancel" },
-      {
-        text: "Cancelar inscripción",
-        style: "destructive",
-        onPress: () => {
-          void cancelarInscripcion(existing.id).then((res) => {
-            if (!res.ok) {
-              Alert.alert("No se pudo cancelar", res.error);
-              return;
-            }
-            onDone();
-          });
-        },
+    showConfirm({
+      title: "Cancelar inscripción",
+      body: "El lugar queda libre. Los convocados se enteran por el aviso.",
+      cancelLabel: "Volver",
+      confirmLabel: "Cancelar inscripción",
+      danger: true,
+      onConfirm: () => {
+        void cancelarInscripcion(existing.id).then((res) => {
+          if (!res.ok) {
+            showNotice("No se pudo cancelar", res.error);
+            return;
+          }
+          onDone();
+        });
       },
-    ]);
+    });
   };
 
   if (captainTeams.length === 0) {

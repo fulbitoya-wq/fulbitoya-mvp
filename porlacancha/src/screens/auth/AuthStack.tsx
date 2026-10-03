@@ -12,7 +12,7 @@ export function AuthStack({ onSkip }: { onSkip?: () => void }) {
     return <RegisterScreen onGoLogin={() => setScreen("login")} onSkip={onSkip} />;
   }
   if (screen === "forgot") {
-    return <ForgotPasswordScreen onBack={() => setScreen("login")} />;
+    return <ForgotPasswordScreen onBack={() => setScreen("login")} onSkip={onSkip} />;
   }
   return (
     <LoginScreen

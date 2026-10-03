@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { LinearGradient } from "expo-linear-gradient";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, gradientRn, radius, space } from "@shared/design";
+import { colors, radius, space } from "@shared/design";
 import { esFinde, esHoy, esManana, esSoloCancha, type Desafio } from "../lib/desafios";
-import { BrandLogo, DesafioCard, EmptyState, FilterChip, HeaderDecor, Mute, NotifBell } from "../ui";
+import { BrandLogo, DesafioCard, EmptyState, FilterChip, Mute, NotifBell, TAB_BAR_CONTENT_INSET } from "../ui";
+import { fontFamily } from "../lib/fonts";
 import { typeStyle } from "../ui/textStyle";
 import { MapScreen } from "./MapScreen";
+
+const fondoAzul = require("../../assets/fondo-azul.jpeg");
 
 type WhenFilter = "todos" | "hoy" | "manana" | "finde";
 type TipoFilter = "todos" | "f5" | "f7" | "f9" | "f11";
@@ -29,7 +31,6 @@ export function ExplorarScreen({
   items,
   loading,
   error,
-  guest,
   selectedId,
   preferMap,
   onSelectId,
@@ -62,16 +63,15 @@ export function ExplorarScreen({
   }, [items, when, tipo, modo, hayLugar]);
 
   const header = (
-    <LinearGradient colors={[...gradientRn.hero]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.header, { paddingTop: Math.max(insets.top, space[16]) }]}>
-      <HeaderDecor />
+    <View style={[styles.header, { paddingTop: Math.max(insets.top, space[16]) }]}>
       <View style={styles.brandRow}>
-        <View style={styles.brandSide} />
-        <BrandLogo size="sm" />
         {onOpenNotifs ? (
           <NotifBell unread={unreadNotifs} onPress={onOpenNotifs} />
         ) : (
           <View style={styles.brandSide} />
         )}
+        <BrandLogo size="sm" />
+        <View style={styles.brandSide} />
       </View>
       <View style={styles.segment}>
         <Pressable
@@ -127,14 +127,12 @@ export function ExplorarScreen({
           onPress={() => setModo((v) => (v === "cancha" ? "todos" : "cancha"))}
         />
       </ScrollView>
-      {guest ? <Mute>Mirá sin cuenta. El capitán inscribe al equipo.</Mute> : null}
-    </LinearGradient>
+    </View>
   );
 
-  if (mode === "mapa") {
-    return (
-      <View style={styles.fill}>
-        {header}
+  const body =
+    mode === "mapa" ? (
+      <View style={styles.body}>
         <MapScreen
           items={filtered}
           loading={loading}
@@ -145,13 +143,12 @@ export function ExplorarScreen({
           onOpenDesafio={onOpenDesafio}
         />
       </View>
-    );
-  }
-
-  return (
-    <View style={styles.fill}>
-      {header}
-      <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
+    ) : (
+      <ScrollView
+        style={styles.body}
+        contentContainerStyle={[styles.list, { paddingBottom: TAB_BAR_CONTENT_INSET }]}
+        keyboardShouldPersistTaps="handled"
+      >
         {loading ? (
           <Mute>Cargando desafíos…</Mute>
         ) : error ? (
@@ -165,17 +162,22 @@ export function ExplorarScreen({
           filtered.map((d) => <DesafioCard key={d.id} desafio={d} onPress={() => onOpenDesafio(d)} />)
         )}
       </ScrollView>
-    </View>
+    );
+
+  return (
+    <ImageBackground source={fondoAzul} style={styles.fill} resizeMode="cover">
+      {header}
+      {body}
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: colors.navy },
+  fill: { flex: 1, backgroundColor: colors.navyDark },
   header: {
     paddingHorizontal: space[16],
     paddingBottom: space[12],
     gap: space[16],
-    overflow: "hidden",
     minHeight: 118,
   },
   brandRow: {
@@ -187,7 +189,7 @@ const styles = StyleSheet.create({
   brandSide: { width: 48, minHeight: 48 },
   segment: {
     flexDirection: "row",
-    backgroundColor: colors.navyDark,
+    backgroundColor: "rgba(0,27,68,0.55)",
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
@@ -201,9 +203,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  segOn: { backgroundColor: colors.sky },
-  segTxt: typeStyle("caption", colors.gold),
-  segTxtOn: { color: colors.navyDark, fontWeight: "700" },
+  segOn: { backgroundColor: "#2F7AAD" },
+  segTxt: {
+    ...typeStyle("caption", colors.white),
+    fontFamily: fontFamily.uiBold,
+    fontWeight: "700",
+  },
+  segTxtOn: { color: colors.white, fontFamily: fontFamily.uiBold, fontWeight: "700" },
   filters: { flexDirection: "row", alignItems: "center", gap: space[8], paddingRight: space[8] },
-  list: { paddingHorizontal: space[16], paddingBottom: space[40], paddingTop: space[12] },
+  body: { flex: 1 },
+  list: { paddingHorizontal: space[16], paddingBottom: space[40], paddingTop: space[12], flexGrow: 1 },
 });

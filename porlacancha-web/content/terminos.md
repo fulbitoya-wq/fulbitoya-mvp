@@ -32,7 +32,7 @@ Está prohibido acosar, suplantar identidades, manipular resultados, publicar co
 
 ## Baja
 
-Podés pedir el cierre de la cuenta desde la app o en porlacancha.com/eliminar-cuenta. Procesamos la solicitud a la brevedad; algunos datos pueden conservarse por ley.
+Podés cerrar la cuenta desde la app (Configuración → Seguridad → Eliminar mi cuenta). La baja es inmediata. Si sos capitán de un equipo con más jugadores, tenés que transferir la capitanía antes. Algunos datos pueden conservarse si una ley lo exige.
 
 ## Responsabilidad
 

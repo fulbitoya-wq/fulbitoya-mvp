@@ -6,6 +6,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { supabase } from "../../lib/supabase";
 import { BrandLogo, Button, ErrorText, Field, Heading, Lead, Screen } from "../../ui";
 import { typeStyle } from "../../ui/textStyle";
+import { AuthBackBar } from "./AuthBackBar";
 
 function abortAfter(ms: number) {
   const ctrl = new AbortController();
@@ -91,6 +92,7 @@ export function CompletePhoneScreen() {
 
   return (
     <Screen scroll>
+      <AuthBackBar onBack={() => signOut()} label="Cerrar sesión" />
       <BrandLogo size="sm" />
       <Heading>Tu teléfono</Heading>
       <Lead>Para coordinar partidos necesitamos un WhatsApp. Mínimo 6 dígitos (podés poner el 11).</Lead>

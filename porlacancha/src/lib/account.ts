@@ -9,14 +9,23 @@ export async function updatePassword(next: string): Promise<{ ok: true } | { ok:
   return { ok: true };
 }
 
-export async function solicitarEliminacionCuenta(): Promise<
-  { ok: true; yaPendiente: boolean } | { ok: false; error: string }
+export async function eliminarMiCuenta(): Promise<
+  { ok: true } | { ok: false; error: string }
 > {
-  const { data, error } = await supabase.rpc("solicitar_eliminacion_cuenta");
+  const { data, error } = await supabase.rpc("eliminar_mi_cuenta");
   if (error) return { ok: false, error: error.message };
-  const row = data as { ok?: boolean; error?: string; ya_pendiente?: boolean } | null;
+  const row = data as { ok?: boolean; error?: string; equipos?: string } | null;
   if (!row || row.ok === false) {
-    return { ok: false, error: row?.error === "no_auth" ? "Tenés que iniciar sesión." : row?.error || "No se pudo pedir la baja." };
+    if (row?.error === "no_auth") return { ok: false, error: "Tenés que iniciar sesión." };
+    if (row?.error === "capitan_debe_transferir") {
+      return {
+        ok: false,
+        error: row.equipos
+          ? `Primero transferí la capitanía de: ${row.equipos}.`
+          : "Primero transferí la capitanía de tus equipos.",
+      };
+    }
+    return { ok: false, error: row?.error || "No se pudo borrar la cuenta." };
   }
-  return { ok: true, yaPendiente: Boolean(row.ya_pendiente) };
+  return { ok: true };
 }

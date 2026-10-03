@@ -4,8 +4,10 @@ import { firstZodError, registerSchema } from "@shared/validation/auth";
 import { colors } from "@shared/design";
 import { supabase } from "../../lib/supabase";
 import { emailRedirectConfirm } from "../../lib/web-url";
-import { BrandLogo, Button, ErrorText, Field, Heading, InfoText, Lead, Screen } from "../../ui";
+import { AuthScreen, BrandLogo, Button, Field, Heading } from "../../ui";
 import { typeStyle } from "../../ui/textStyle";
+import { AuthBackBar } from "./AuthBackBar";
+import { AuthNoticeModal } from "./AuthNoticeModal";
 import { SocialAuthButtons } from "./SocialAuthButtons";
 
 type Props = { onGoLogin: () => void; onSkip?: () => void };
@@ -15,12 +17,16 @@ export function RegisterScreen({ onGoLogin, onSkip }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const goHome = () => {
+    if (onSkip) onSkip();
+    else onGoLogin();
+  };
 
   const submit = async () => {
     setError(null);
-    setInfo(null);
     const parsed = registerSchema.safeParse({ nombre, email, password });
     if (!parsed.success) {
       setError(firstZodError(parsed.error));
@@ -43,40 +49,57 @@ export function RegisterScreen({ onGoLogin, onSkip }: Props) {
       setError(err.message);
       return;
     }
-    setInfo("Cuenta creada. Si pedimos confirmar email, abrí el link en este teléfono.");
+    setDone(true);
+  };
+
+  const onChangeClear = (fn: (v: string) => void) => (v: string) => {
+    fn(v);
+    if (error) setError(null);
   };
 
   return (
-    <Screen scroll>
+    <AuthScreen>
+      <AuthBackBar onBack={onGoLogin} label="Volver a ingresar" />
       <BrandLogo size="md" />
       <Heading>Crear cuenta</Heading>
-      <Lead>Sirve también para reservar en FulbitoYa.</Lead>
-      {error ? <ErrorText>{error}</ErrorText> : null}
-      {info ? <InfoText>{info}</InfoText> : null}
-      <Field placeholder="Nombre" value={nombre} onChangeText={setNombre} />
+      <Field leftIcon="user" placeholder="Nombre" value={nombre} invalid={Boolean(error)} onChangeText={onChangeClear(setNombre)} />
       <Field
+        leftIcon="mail"
         autoCapitalize="none"
         keyboardType="email-address"
         placeholder="Email"
         value={email}
-        onChangeText={setEmail}
+        invalid={Boolean(error)}
+        onChangeText={onChangeClear(setEmail)}
       />
       <Field
+        leftIcon="lock"
         secureTextEntry
         placeholder="Contraseña (mín. 8)"
         value={password}
-        onChangeText={setPassword}
+        invalid={Boolean(error)}
+        error={error}
+        onChangeText={onChangeClear(setPassword)}
       />
       <Button label={loading ? "Creando..." : "Registrarme"} onPress={submit} loading={loading} />
       <SocialAuthButtons />
       <Pressable onPress={onGoLogin} style={{ marginTop: 20 }}>
-        <Text style={typeStyle("bodySmall", colors.gold)}>Ya tengo cuenta</Text>
+        <Text style={typeStyle("bodySmall", colors.sky)}>Ya tengo cuenta</Text>
       </Pressable>
       {onSkip ? (
         <Pressable onPress={onSkip} style={{ marginTop: 22 }}>
           <Text style={typeStyle("bodySmall", colors.sky)}>Seguir mirando sin cuenta</Text>
         </Pressable>
       ) : null}
-    </Screen>
+      <AuthNoticeModal
+        visible={done}
+        title="Cuenta creada con éxito"
+        body="Te mandamos un mail para confirmar. Abrí el link y después ingresá con tu email."
+        primaryLabel="Volver al inicio"
+        onPrimary={goHome}
+        secondaryLabel="Ir a ingresar"
+        onSecondary={onGoLogin}
+      />
+    </AuthScreen>
   );
 }

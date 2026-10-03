@@ -6,8 +6,10 @@ export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://porlacancha
   ""
 );
 
-export const appStoreUrl = process.env.NEXT_PUBLIC_APP_STORE_URL?.trim() || "";
-export const playStoreUrl = process.env.NEXT_PUBLIC_PLAY_STORE_URL?.trim() || "";
+export const APP_STORE_URL = process.env.NEXT_PUBLIC_APP_STORE_URL?.trim() || "";
+export const PLAY_STORE_URL = process.env.NEXT_PUBLIC_PLAY_STORE_URL?.trim() || "";
+export const appStoreUrl = APP_STORE_URL;
+export const playStoreUrl = PLAY_STORE_URL;
 export const appScheme = process.env.NEXT_PUBLIC_APP_SCHEME?.trim() || "porlacancha";
 
 export function appDeepLink(path: string): string {

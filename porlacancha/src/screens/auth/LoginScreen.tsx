@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { Pressable, Text } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { firstZodError, loginSchema } from "@shared/validation/auth";
 import { supabase } from "../../lib/supabase";
-import { BrandLogo, Button, ErrorText, Field, Heading, Lead, Screen } from "../../ui";
+import { AuthScreen, BrandLogo, Button, Field } from "../../ui";
 import { typeStyle } from "../../ui/textStyle";
 import { colors } from "@shared/design";
+import { fontFamily } from "../../lib/fonts";
+import { AuthBackBar } from "./AuthBackBar";
 import { SocialAuthButtons } from "./SocialAuthButtons";
 
 type Props = {
@@ -29,42 +31,80 @@ export function LoginScreen({ onGoRegister, onGoForgot, onSkip }: Props) {
     setLoading(true);
     const { error: err } = await supabase.auth.signInWithPassword(parsed.data);
     setLoading(false);
-    if (err) setError("Email o contraseña incorrectos.");
+    if (err) setError("Email o contraseña incorrectos");
   };
 
   return (
-    <Screen scroll>
-      <BrandLogo size="md" />
-      <Heading>Ingresar</Heading>
-      <Lead>La misma cuenta que FulbitoYa. Email y contraseña.</Lead>
-      {error ? <ErrorText>{error}</ErrorText> : null}
+    <AuthScreen>
+      {onSkip ? <AuthBackBar onBack={onSkip} label="Volver al inicio" /> : null}
+      <View style={styles.logo}>
+        <BrandLogo size="md" />
+      </View>
       <Field
+        leftIcon="mail"
         autoCapitalize="none"
         autoCorrect={false}
         keyboardType="email-address"
-        placeholder="Email"
+        placeholder="Email o usuario"
         value={email}
-        onChangeText={setEmail}
+        invalid={Boolean(error)}
+        onChangeText={(v) => {
+          setEmail(v);
+          if (error) setError(null);
+        }}
       />
       <Field
+        leftIcon="lock"
         secureTextEntry
         placeholder="Contraseña"
         value={password}
-        onChangeText={setPassword}
+        invalid={Boolean(error)}
+        error={error}
+        onChangeText={(v) => {
+          setPassword(v);
+          if (error) setError(null);
+        }}
       />
-      <Button label={loading ? "Ingresando..." : "Ingresar"} onPress={submit} loading={loading} />
+      <Pressable onPress={onGoForgot} style={styles.forgot}>
+        <Text style={styles.forgotTxt}>¿Olvidaste tu contraseña?</Text>
+      </Pressable>
+      <Button label={loading ? "Ingresando..." : "Iniciar sesión"} onPress={submit} loading={loading} />
       <SocialAuthButtons />
-      <Pressable onPress={onGoForgot} style={{ marginTop: 20 }}>
-        <Text style={typeStyle("bodySmall", colors.gold)}>Olvidé mi contraseña</Text>
-      </Pressable>
-      <Pressable onPress={onGoRegister} style={{ marginTop: 14 }}>
-        <Text style={typeStyle("bodySmall", colors.gold)}>Crear cuenta</Text>
-      </Pressable>
       {onSkip ? (
-        <Pressable onPress={onSkip} style={{ marginTop: 22 }}>
+        <Pressable onPress={onSkip} style={styles.skip}>
           <Text style={typeStyle("bodySmall", colors.sky)}>Seguir mirando sin cuenta</Text>
         </Pressable>
       ) : null}
-    </Screen>
+      <View style={styles.footer}>
+        <Text style={styles.footerMute}>¿Ya tenés cuenta? </Text>
+        <Pressable onPress={onGoRegister} accessibilityRole="button" accessibilityLabel="Registrate">
+          <Text style={styles.footerLink}>Registrate</Text>
+        </Pressable>
+      </View>
+    </AuthScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  logo: { paddingBottom: 36 },
+  forgot: { alignSelf: "stretch", marginTop: -4, marginBottom: 16 },
+  forgotTxt: {
+    ...typeStyle("bodySmall", colors.sky),
+    textAlign: "center",
+  },
+  skip: { marginTop: 18, alignItems: "center" },
+  footer: {
+    marginTop: 28,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  footerMute: {
+    ...typeStyle("bodySmall", colors.textSecondary),
+  },
+  footerLink: {
+    ...typeStyle("bodySmall", colors.sky),
+    fontFamily: fontFamily.uiBold,
+  },
+});

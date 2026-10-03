@@ -1,10 +1,10 @@
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors, radius, space } from "@shared/design";
 import {
   type Desafio,
 } from "../lib/desafios";
 import { Building2, MapPin, Trophy, Users, iconStroke } from "../lib/icons";
-import { BrandLogo, Button, Card, Chip, DesafioCard, EmptyState, Heading, Kicker, Lead, Mute, Screen } from "../ui";
+import { BrandLogo, Button, Card, Chip, DesafioCard, EmptyState, Heading, Kicker, Lead, Mute, Screen, showNotice } from "../ui";
 import { typeStyle } from "../ui/textStyle";
 
 type HomeScreenProps = {
@@ -31,7 +31,7 @@ export function HomeScreen({
       onRequestAuth();
       return;
     }
-    Alert.alert(
+    showNotice(
       "Publicar desafío",
       "Pronto vas a poder crear un partido por plata desde acá. Hoy el predio ya puede publicarlo desde el panel de FulbitoYa."
     );

@@ -1,10 +1,13 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { colors, space } from "@shared/design";
 import { mensajeErrorEquipo, rpcResponderSolicitud } from "@shared/equipos";
 import type { SolicitudItem } from "../../lib/equipos";
 import { supabase } from "../../lib/supabase";
-import { Button } from "../../ui";
+import { Button, TAB_BAR_CONTENT_INSET } from "../../ui";
+import { Check, X, iconStroke } from "../../lib/icons";
 import { useState } from "react";
+
+const fondoAzul3 = require("../../../assets/fondo-azul-3.jpeg");
 
 type Props = {
   items: SolicitudItem[];
@@ -27,7 +30,8 @@ export function InvitacionesScreen({ items, onBack, onChanged, onAccept }: Props
   };
 
   return (
-    <ScrollView style={styles.page} contentContainerStyle={styles.content}>
+    <ImageBackground source={fondoAzul3} style={styles.page} resizeMode="cover">
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
       <Pressable onPress={onBack}>
         <Text style={styles.back}>← Equipos</Text>
       </Pressable>
@@ -42,34 +46,50 @@ export function InvitacionesScreen({ items, onBack, onChanged, onAccept }: Props
             <Text style={styles.title}>{s.equipo_nombre ?? "Equipo"}</Text>
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
-                <Button label="Aceptar" onPress={() => onAccept(s.id, () => responder(s.id, true))} />
+                <Button
+                  label="Aceptar"
+                  icon={<Check color={colors.navyDark} size={20} strokeWidth={iconStroke} />}
+                  onPress={() => onAccept(s.id, () => responder(s.id, true))}
+                />
               </View>
               <View style={{ flex: 1 }}>
-                <Button label="Rechazar" variant="danger" onPress={() => void responder(s.id, false)} />
+                <Button
+                  label="Rechazar"
+                  variant="danger"
+                  icon={<X color={colors.danger} size={20} strokeWidth={iconStroke} />}
+                  onPress={() => void responder(s.id, false)}
+                />
               </View>
             </View>
           </View>
         ))
       )}
-    </ScrollView>
+      </ScrollView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: colors.navyDark },
-  content: { paddingHorizontal: 20, paddingTop: 52, paddingBottom: 40 },
+  scroll: { flex: 1, backgroundColor: "transparent" },
+  content: { paddingHorizontal: 20, paddingTop: 52, paddingBottom: 40 + TAB_BAR_CONTENT_INSET },
   back: { color: colors.gold, fontWeight: "700", marginBottom: 12 },
   h1: { fontSize: 26, fontWeight: "800", color: colors.white },
   lead: { marginTop: 8, marginBottom: 16, color: colors.textSecondary, lineHeight: 20 },
   muted: { color: colors.textSecondary },
   error: { color: colors.danger, marginBottom: 10 },
   card: {
+    backgroundColor: "rgba(0,27,68,0.28)",
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    borderColor: "rgba(139,201,235,0.35)",
     borderRadius: 14,
     padding: 14,
-    marginBottom: 10,
+    marginBottom: 12,
+    shadowColor: "#001B44",
+    shadowOpacity: 0.45,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 8,
   },
   title: { fontWeight: "800", color: colors.white, marginBottom: 10 },
   row: { flexDirection: "row", gap: space[12] },

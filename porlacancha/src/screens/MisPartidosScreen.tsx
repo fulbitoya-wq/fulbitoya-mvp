@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { colors, space } from "@shared/design";
 import type { Desafio } from "../lib/desafios";
 import { etiquetaEstado, chipToneEstado } from "../lib/desafios";
@@ -11,8 +11,10 @@ import {
   puedeEditarConvocados,
   type MiPartido,
 } from "../lib/mis-partidos";
-import { Button, Chip, DesafioCard, EmptyState, FilterChip, Heading, Kicker, Mute, Screen } from "../ui";
+import { Button, Chip, DesafioCard, EmptyState, FilterChip, Heading, Kicker, Mute, Screen, showConfirm, showNotice } from "../ui";
 import { typeStyle } from "../ui/textStyle";
+
+const fondoAzul2 = require("../../assets/fondo-azul-2.jpeg");
 
 type Tab = "proximos" | "historial";
 
@@ -70,28 +72,28 @@ export function MisPartidosScreen({ guest, onRequestAuth, onOpenDesafio, onEdita
   }, [items, tab]);
 
   const pedirCancelar = (p: MiPartido) => {
-    Alert.alert("Cancelar inscripción", "El lugar queda libre. Los convocados se enteran por el aviso.", [
-      { text: "Volver", style: "cancel" },
-      {
-        text: "Cancelar inscripción",
-        style: "destructive",
-        onPress: () => {
-          if (!p.inscripcionId) return;
-          void cancelarInscripcion(p.inscripcionId).then((res) => {
-            if (!res.ok) {
-              Alert.alert("No se pudo cancelar", res.error);
-              return;
-            }
-            void load();
-          });
-        },
+    showConfirm({
+      title: "Cancelar inscripción",
+      body: "El lugar queda libre. Los convocados se enteran por el aviso.",
+      cancelLabel: "Volver",
+      confirmLabel: "Cancelar inscripción",
+      danger: true,
+      onConfirm: () => {
+        if (!p.inscripcionId) return;
+        void cancelarInscripcion(p.inscripcionId).then((res) => {
+          if (!res.ok) {
+            showNotice("No se pudo cancelar", res.error);
+            return;
+          }
+          void load();
+        });
       },
-    ]);
+    });
   };
 
   if (guest) {
     return (
-      <Screen scroll>
+      <Screen scroll background={fondoAzul2} tabBar>
         <Kicker>Calendario</Kicker>
         <Heading>Mis partidos</Heading>
         <EmptyState
@@ -104,7 +106,7 @@ export function MisPartidosScreen({ guest, onRequestAuth, onOpenDesafio, onEdita
   }
 
   return (
-    <Screen>
+    <Screen background={fondoAzul2} tabBar>
       <Kicker>Calendario</Kicker>
       <Heading>Mis partidos</Heading>
       <View style={styles.tabs}>

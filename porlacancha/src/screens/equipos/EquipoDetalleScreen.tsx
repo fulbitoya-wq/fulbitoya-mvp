@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -31,6 +30,7 @@ import {
   type SolicitudItem,
 } from "../../lib/equipos";
 import { supabase } from "../../lib/supabase";
+import { showConfirm, showNotice, TAB_BAR_CONTENT_INSET } from "../../ui";
 
 type Props = {
   equipoId: string;
@@ -100,7 +100,7 @@ export function EquipoDetalleScreen({ equipoId, onBack, onLeft, onBuscarJugadore
     const res = await rpcInvitarJugador(supabase, equipoId, parsed.data.identificador);
     if (!res.ok) return fail(res.error);
     setIdentificador("");
-    Alert.alert("Listo", "Invitación enviada.");
+    showNotice("Listo", "Invitación enviada.");
   };
 
   const responder = async (id: string, aceptar: boolean) => {
@@ -111,47 +111,50 @@ export function EquipoDetalleScreen({ equipoId, onBack, onLeft, onBuscarJugadore
   };
 
   const transferir = (usuarioId: string) => {
-    Alert.alert("Transferir capitanía", "Ese jugador pasa a ser capitán.", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Transferir",
-        onPress: async () => {
+    showConfirm({
+      title: "Transferir capitanía",
+      body: "Ese jugador pasa a ser capitán.",
+      confirmLabel: "Transferir",
+      onConfirm: () => {
+        void (async () => {
           const res = await rpcTransferirCapitania(supabase, equipoId, usuarioId);
           if (!res.ok) return fail(res.error);
           await load();
-        },
+        })();
       },
-    ]);
+    });
   };
 
   const expulsar = (usuarioId: string) => {
-    Alert.alert("Expulsar", "Sale del plantel.", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Expulsar",
-        style: "destructive",
-        onPress: async () => {
+    showConfirm({
+      title: "Expulsar",
+      body: "Sale del plantel.",
+      confirmLabel: "Expulsar",
+      danger: true,
+      onConfirm: () => {
+        void (async () => {
           const res = await rpcExpulsarJugador(supabase, equipoId, usuarioId);
           if (!res.ok) return fail(res.error);
           await load();
-        },
+        })();
       },
-    ]);
+    });
   };
 
   const salir = () => {
-    Alert.alert("Salir del equipo", "Vas a dejar de figurar en el plantel.", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Salir",
-        style: "destructive",
-        onPress: async () => {
+    showConfirm({
+      title: "Salir del equipo",
+      body: "Vas a dejar de figurar en el plantel.",
+      confirmLabel: "Salir",
+      danger: true,
+      onConfirm: () => {
+        void (async () => {
           const res = await rpcSalirDelEquipo(supabase, equipoId);
           if (!res.ok) return fail(res.error);
           onLeft();
-        },
+        })();
       },
-    ]);
+    });
   };
 
   return (
@@ -261,7 +264,7 @@ export function EquipoDetalleScreen({ equipoId, onBack, onLeft, onBuscarJugadore
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: colors.navyDark },
-  content: { paddingHorizontal: 20, paddingTop: 52, paddingBottom: 48 },
+  content: { paddingHorizontal: 20, paddingTop: 52, paddingBottom: 48 + TAB_BAR_CONTENT_INSET },
   back: { color: colors.gold, fontWeight: "700", marginBottom: 12 },
   head: { flexDirection: "row", gap: 12, alignItems: "center", marginBottom: 14 },
   crest: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.surfaceElevated },

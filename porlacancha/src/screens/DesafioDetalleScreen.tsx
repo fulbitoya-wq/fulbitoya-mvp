@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, radius, space } from "@shared/design";
@@ -122,7 +122,7 @@ export function DesafioDetalleScreen({ desafio, guest, inscriptoComo, onBack, on
             {Number.isFinite(lat) && Number.isFinite(lng) ? (
               <MapView
                 style={styles.miniMap}
-                provider={PROVIDER_GOOGLE}
+                provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
                 pointerEvents="none"
                 region={{
                   latitude: lat,

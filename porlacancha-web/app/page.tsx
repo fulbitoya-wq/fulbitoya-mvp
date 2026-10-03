@@ -1,54 +1,46 @@
-import { BrandLogo } from "@/components/BrandLogo";
-import { SiteShell } from "@/components/SiteShell";
-import { StoreButtons } from "@/components/StoreButtons";
-import { appStoreUrl, playStoreUrl } from "@/lib/site";
-
-const pasos = [
-  ["01", "Armá tu equipo", "Creá el plantel, nombrá capitán y sumá gente con un enlace."],
-  ["02", "Inscribite a un desafío", "El capitán anota al equipo en un partido con premio."],
-  ["03", "Jugá y ganá", "Se juega en la cancha. El premio lo pone quien arma el desafío."],
-];
+import { CONTACT_EMAIL } from "@/lib/site";
+import { LandingHero } from "@/components/landing/LandingHero";
+import Link from "next/link";
 
 export default function HomePage() {
-  const hayTiendas = Boolean(appStoreUrl || playStoreUrl);
-
   return (
-    <SiteShell>
-      <div className="mt-2 flex justify-center">
-        <BrandLogo size="hero" />
-      </div>
-      <p className="font-display mt-3 text-center text-3xl leading-none text-plc-sky">Y algo más</p>
-      <h1 className="font-display mt-5 text-[3.25rem] leading-[0.9] text-plc-white">
-        El partido
-        <br />
-        es por algo.
-      </h1>
-      <p className="mt-5 text-[15px] leading-6 text-plc-text-secondary">
-        Fútbol amateur con premio. No es una reserva de cancha: es un desafío. Armás tu equipo, te
-        inscribís y jugás. Esta web sirve para las tiendas, los enlaces de WhatsApp y los trámites
-        de cuenta. El juego está en la app.
-      </p>
+    <div className="bg-[#001B44]">
+      <LandingHero />
 
-      <StoreButtons className="mt-7" />
-      {!hayTiendas ? (
-        <p className="card-plc mt-6 border border-white/10 px-4 py-3 text-sm leading-5 text-plc-text-secondary">
-          Las tiendas todavía no están publicadas. Cuando App Store y Play tengan link, acá aparecen
-          los botones de descarga.
+      <section id="como-funciona" className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-16">
+        <h2 className="text-3xl font-extrabold text-[#F7F5EF] sm:text-4xl">Cómo funciona</h2>
+        <p className="mt-3 max-w-xl text-[#B8C4D6]">
+          Armá el plantel, inscribite a un desafío y jugá en la cancha. El juego está en la app.
         </p>
-      ) : null}
+      </section>
 
-      <h2 className="font-display mt-12 text-3xl text-plc-gold">Cómo funciona</h2>
-      <ol className="mt-4 space-y-3">
-        {pasos.map(([n, t, d]) => (
-          <li key={n} className="card-plc flex gap-3 p-4">
-            <span className="font-display text-3xl leading-none text-plc-sky">{n}</span>
-            <div>
-              <p className="font-extrabold text-plc-white">{t}</p>
-              <p className="mt-1 text-sm leading-5 text-plc-text-secondary">{d}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
-    </SiteShell>
+      <section id="funcionalidades" className="mx-auto max-w-[1440px] px-5 py-16 sm:px-8 lg:px-16">
+        <h2 className="text-3xl font-extrabold text-[#F7F5EF] sm:text-4xl">Funcionalidades</h2>
+        <p className="mt-3 max-w-xl text-[#B8C4D6]">Próximamente, con el resto de la maqueta.</p>
+      </section>
+
+      <section id="predios" className="mx-auto max-w-[1440px] px-5 py-16 sm:px-8 lg:px-16">
+        <h2 className="text-3xl font-extrabold text-[#F7F5EF] sm:text-4xl">Para predios</h2>
+        <p className="mt-3 max-w-xl text-[#B8C4D6]">
+          Esta app es para jugadores y equipos amateur. Los predios no gestionan su operación desde
+          acá.
+        </p>
+      </section>
+
+      <section id="faq" className="mx-auto max-w-[1440px] px-5 py-16 sm:px-8 lg:px-16">
+        <h2 className="text-3xl font-extrabold text-[#F7F5EF] sm:text-4xl">FAQ</h2>
+        <p className="mt-3 max-w-xl text-[#B8C4D6]">Las preguntas frecuentes van en el siguiente paso.</p>
+      </section>
+
+      <footer className="border-t border-white/10 px-5 py-8 sm:px-8 lg:px-16">
+        <div className="mx-auto flex max-w-[1440px] flex-wrap gap-x-6 gap-y-2 text-sm text-[#B8C4D6]">
+          <Link href="/terminos">Términos y condiciones</Link>
+          <Link href="/privacidad">Privacidad</Link>
+          <Link href="/soporte">Soporte</Link>
+          <Link href="/eliminar-cuenta">Eliminar cuenta</Link>
+          <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+        </div>
+      </footer>
+    </div>
   );
 }
