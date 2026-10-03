@@ -42,7 +42,7 @@ export function LandingHero() {
       />
       <div className="landing-hero-overlay absolute inset-0" aria-hidden />
 
-      <LandingNav />
+      <LandingNav overlay />
 
       <div className="relative mx-auto grid min-h-dvh max-w-[1440px] grid-cols-1 items-center gap-10 px-5 pb-10 pt-[108px] sm:px-8 lg:grid-cols-2 lg:gap-8 lg:px-12 lg:pb-8 lg:pt-[108px] xl:px-16">
         <div className="landing-copy max-w-[600px] lg:max-w-none">

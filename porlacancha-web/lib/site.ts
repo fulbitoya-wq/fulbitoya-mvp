@@ -11,6 +11,7 @@ export const PLAY_STORE_URL = process.env.NEXT_PUBLIC_PLAY_STORE_URL?.trim() || 
 export const appStoreUrl = APP_STORE_URL;
 export const playStoreUrl = PLAY_STORE_URL;
 export const appScheme = process.env.NEXT_PUBLIC_APP_SCHEME?.trim() || "porlacancha";
+export const FULBITOYA_URL = process.env.NEXT_PUBLIC_FULBITOYA_URL?.trim() || "";
 
 export function appDeepLink(path: string): string {
   const clean = path.replace(/^\//, "");
