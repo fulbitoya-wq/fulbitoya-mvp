@@ -21,6 +21,10 @@ export const metadata: Metadata = {
   },
   description: "PorLaCancha conecta equipos con desafíos reales en predios de fútbol amateur. Descargá la app.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://porlacancha.com"),
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/apple-icon" }],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
