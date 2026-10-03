@@ -217,21 +217,3 @@ body {
     transform: none;
   }
 }
-  background-image:
-    linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent 46%,
-      rgba(139, 201, 235, 0.08) 46%,
-      rgba(139, 201, 235, 0.08) 47%,
-      transparent 47%
-    ),
-    linear-gradient(
-      to right,
-      transparent 0,
-      transparent 8%,
-      rgba(217, 169, 40, 0.06) 8%,
-      rgba(217, 169, 40, 0.06) 8.4%,
-      transparent 8.4%
-    );
-}
