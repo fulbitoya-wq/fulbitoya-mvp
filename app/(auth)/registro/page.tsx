@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { firstZodError, registerSchema } from "@shared/validation/auth";
 import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 import { SuccessModal } from "@/components/SuccessModal";
+import { enterFulbitoYa } from "@/lib/auth/profile";
 import { supabase } from "@/lib/supabase";
 
 export default function RegistroPage() {
+  const router = useRouter();
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,6 +18,29 @@ export default function RegistroPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    const go = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!mounted) return;
+      if (session) {
+        const path = await enterFulbitoYa();
+        if (!mounted) return;
+        router.replace(path);
+        router.refresh();
+        return;
+      }
+      setCheckingSession(false);
+    };
+    void go();
+    return () => {
+      mounted = false;
+    };
+  }, [router]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +80,14 @@ export default function RegistroPage() {
 
     setShowSuccess(true);
   };
+
+  if (checkingSession) {
+    return (
+      <div className="flex min-h-[80vh] items-center justify-center bg-[#1A2E4A] px-4">
+        <p className="text-sm text-white/80">Entrando al panel…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-[80vh] items-center justify-center bg-[#1A2E4A] px-4 py-12">

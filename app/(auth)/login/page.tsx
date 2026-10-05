@@ -1,20 +1,45 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { firstZodError, loginSchema } from "@shared/validation/auth";
 import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
-import { redirectPathForUser } from "@/lib/auth/profile";
+import { enterFulbitoYa } from "@/lib/auth/profile";
 import { supabase } from "@/lib/supabase";
 
-function LoginForm() {
+export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    const go = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!mounted) return;
+      if (session) {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("authRedirectAfterLogin");
+        }
+        const path = await enterFulbitoYa();
+        if (!mounted) return;
+        router.replace(path);
+        router.refresh();
+        return;
+      }
+      setCheckingSession(false);
+    };
+    void go();
+    return () => {
+      mounted = false;
+    };
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,29 +58,32 @@ function LoginForm() {
       password: parsed.data.password,
     });
 
-    setLoading(false);
-
     if (signInError) {
       setError(signInError.message);
+      setLoading(false);
       return;
     }
 
     if (data.user) {
-      const nextParam = searchParams.get("next");
-      const savedRedirect =
-        typeof window !== "undefined" ? localStorage.getItem("authRedirectAfterLogin") : null;
-      const safe = (p: string | null) => (p && p.startsWith("/dashboard") ? p : null);
-      const target =
-        safe(nextParam) ||
-        safe(savedRedirect) ||
-        (await redirectPathForUser(data.user.id));
       if (typeof window !== "undefined") {
         localStorage.removeItem("authRedirectAfterLogin");
       }
-      router.push(target);
+      const path = await enterFulbitoYa();
+      router.replace(path);
       router.refresh();
+      return;
     }
+
+    setLoading(false);
   };
+
+  if (checkingSession) {
+    return (
+      <div className="flex min-h-[80vh] items-center justify-center bg-[#1A2E4A] px-4">
+        <p className="text-sm text-white/80">Entrando al panel…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-[80vh] items-center justify-center bg-[#1A2E4A] px-4 py-12">
@@ -103,13 +131,5 @@ function LoginForm() {
         </p>
       </div>
     </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="min-h-[80vh] bg-[#1A2E4A]" />}>
-      <LoginForm />
-    </Suspense>
   );
 }
