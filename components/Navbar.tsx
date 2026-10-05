@@ -56,26 +56,19 @@ export function Navbar() {
             />
           </Link>
           <div className="flex items-center gap-4">
-            <Link
-              href="/canchas"
-              className="text-sm font-medium text-white/90 transition hover:text-white"
-            >
-              Canchas
-            </Link>
-            <Link
-              href="/desafios"
-              className="text-sm font-medium text-white/90 transition hover:text-white"
-            >
-              Desafíos
-            </Link>
-
             {loadingAuth ? null : isLoggedIn ? (
               <>
                 <Link
-                  href="/jugador"
+                  href="/dashboard"
                   className="text-sm font-medium text-white/90 transition hover:text-white"
                 >
-                  Mi panel
+                  Panel
+                </Link>
+                <Link
+                  href="/dashboard/disponibilidades"
+                  className="text-sm font-medium text-white/90 transition hover:text-white"
+                >
+                  Agenda
                 </Link>
                 <button
                   type="button"
@@ -97,7 +90,7 @@ export function Navbar() {
                   href="/registro"
                   className="rounded-lg bg-[var(--fulbito-green)] px-6 py-3 text-base font-semibold text-white transition hover:bg-[var(--fulbito-green-hover)]"
                 >
-                  Registrate
+                  Crear cuenta
                 </Link>
               </>
             )}

@@ -2,8 +2,15 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "FulbitoYa! — Reservá tu cancha y jugá",
-  description: "La mejor plataforma de fútbol amateur de Buenos Aires. Encontrá canchas, reservá turnos y pagá tu parte.",
+  title: {
+    default: "FulbitoYa",
+    template: "%s · FulbitoYa",
+  },
+  description: "Panel de predios: horarios, reservas y cobros. Los jugadores juegan en PorLaCancha.",
+  icons: {
+    icon: [{ url: "/icon" }],
+    apple: [{ url: "/apple-icon" }],
+  },
 };
 
 export default function RootLayout({

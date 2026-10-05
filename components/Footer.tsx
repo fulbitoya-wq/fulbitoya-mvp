@@ -22,29 +22,14 @@ export function Footer() {
           </div>
 
           <nav className="flex flex-wrap justify-center gap-6 text-sm">
-            <Link
-              href="/canchas"
-              className="text-white/70 transition-colors hover:text-white"
-            >
-              Canchas
-            </Link>
-            <Link
-              href="/desafios"
-              className="text-white/70 transition-colors hover:text-white"
-            >
-              Desafíos
-            </Link>
-            <Link
-              href="/login"
-              className="text-white/70 transition-colors hover:text-white"
-            >
+            <Link href="/login" className="text-white/70 transition-colors hover:text-white">
               Ingresar
             </Link>
-            <Link
-              href="/registro"
-              className="text-white/70 transition-colors hover:text-white"
-            >
-              Registrate
+            <Link href="/registro" className="text-white/70 transition-colors hover:text-white">
+              Crear cuenta
+            </Link>
+            <Link href="/dashboard" className="text-white/70 transition-colors hover:text-white">
+              Panel
             </Link>
           </nav>
         </div>

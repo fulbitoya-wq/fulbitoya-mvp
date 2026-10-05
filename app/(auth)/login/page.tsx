@@ -47,7 +47,7 @@ function LoginForm() {
       const target =
         (nextParam && nextParam.startsWith("/") ? nextParam : null) ||
         (savedRedirect && savedRedirect.startsWith("/") ? savedRedirect : null) ||
-        (await redirectPathForUser(data.user.id));
+        (await redirectPathForUser(data.user.id, "/dashboard"));
       if (typeof window !== "undefined") {
         localStorage.removeItem("authRedirectAfterLogin");
       }
@@ -60,7 +60,7 @@ function LoginForm() {
     <div className="flex min-h-[80vh] items-center justify-center bg-[#1A2E4A] px-4 py-12">
       <div className="w-full max-w-md rounded-xl border border-[#E0E0E0] bg-white p-8 shadow-lg">
         <h1 className="font-heading text-3xl uppercase tracking-wide text-[#1A2E4A]">Ingresar</h1>
-        <p className="mt-2 text-sm text-[#1A2E4A]/70">La misma cuenta sirve para PorLaCancha.</p>
+        <p className="mt-2 text-sm text-[#1A2E4A]/70">Ingresá para cargar horarios y ver reservas.</p>
 
         <form onSubmit={handleLogin} className="mt-6 space-y-4">
           {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
