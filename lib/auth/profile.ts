@@ -15,8 +15,15 @@ export async function completeOrigenRegistro(userId: string, origen: OrigenRegis
   }
 }
 
-export async function redirectPathForUser(userId: string, fallbackJugador = "/jugador"): Promise<string> {
-  const { data } = await supabase.from("usuarios").select("rol").eq("id", userId).maybeSingle();
-  if (data?.rol === "owner") return "/dashboard";
-  return fallbackJugador;
+export async function enterFulbitoYa(): Promise<string> {
+  await supabase.rpc("fy_asegurar_owner");
+  return "/dashboard";
+}
+
+/** En FulbitoYa el destino es siempre el panel del predio. */
+export async function redirectPathForUser(
+  _userId?: string,
+  _fallbackJugador = "/dashboard",
+): Promise<string> {
+  return enterFulbitoYa();
 }

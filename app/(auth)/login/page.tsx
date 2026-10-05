@@ -44,10 +44,11 @@ function LoginForm() {
       const nextParam = searchParams.get("next");
       const savedRedirect =
         typeof window !== "undefined" ? localStorage.getItem("authRedirectAfterLogin") : null;
+      const safe = (p: string | null) => (p && p.startsWith("/dashboard") ? p : null);
       const target =
-        (nextParam && nextParam.startsWith("/") ? nextParam : null) ||
-        (savedRedirect && savedRedirect.startsWith("/") ? savedRedirect : null) ||
-        (await redirectPathForUser(data.user.id, "/dashboard"));
+        safe(nextParam) ||
+        safe(savedRedirect) ||
+        (await redirectPathForUser(data.user.id));
       if (typeof window !== "undefined") {
         localStorage.removeItem("authRedirectAfterLogin");
       }

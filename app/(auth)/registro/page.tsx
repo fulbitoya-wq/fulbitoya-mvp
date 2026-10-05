@@ -60,7 +60,7 @@ export default function RegistroPage() {
       <div className="w-full max-w-md rounded-xl border border-[#E0E0E0] bg-white p-8 shadow-lg">
         <h1 className="font-heading text-3xl uppercase tracking-wide text-[#1A2E4A]">Crear cuenta</h1>
         <p className="mt-2 text-sm text-[#1A2E4A]/70">
-          Una sola cuenta para FulbitoYa y PorLaCancha. Todas empiezan como jugador.
+          Cuenta de predio: horarios, reservas y cobros. Los jugadores usan PorLaCancha.
         </p>
 
         <form onSubmit={handleRegister} className="mt-6 space-y-4">
@@ -106,7 +106,7 @@ export default function RegistroPage() {
             disabled={loading}
             className="w-full rounded-lg bg-[#4CAF50] py-3 font-medium text-white transition hover:bg-[#388E3C]"
           >
-            {loading ? "Creando..." : "Crear cuenta"}
+            {loading ? "Creando..." : "Crear cuenta de predio"}
           </button>
         </form>
 
@@ -126,7 +126,7 @@ export default function RegistroPage() {
         open={showSuccess}
         onClose={() => setShowSuccess(false)}
         title="¡Cuenta creada!"
-        message="Tu cuenta fue creada como jugador. Si tenés confirmación de email activada, revisá tu correo. Sino, ya podés ingresar. La misma cuenta sirve en PorLaCancha."
+        message="Revisá el mail si pide confirmación. Después ingresá y cargá tu predio y los horarios."
         primaryAction={{ label: "Ir a ingresar", href: "/login" }}
       />
     </div>
