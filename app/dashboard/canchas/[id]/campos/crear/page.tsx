@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { crearCampo } from "@/lib/campos";
 import { supabase } from "@/lib/supabase";
+import { PoliticaReservasForm, type PoliticaReservasFormHandle } from "@/components/dashboard/PoliticaReservasForm";
+import { validarPrecioYSena } from "@/lib/politica";
 
 const BUCKET_FOTOS = "campo-fotos";
 const MAX_FOTO_MB = 2;
@@ -17,8 +19,8 @@ export default function CrearCampoPlaceholderPage() {
   const [nombre, setNombre] = useState("");
   const [tipo, setTipo] = useState<string>("5");
   const [superficie, setSuperficie] = useState<string>("cesped_sintetico");
-  const [valorHora, setValorHora] = useState<string>("0");
-  const [valorReserva, setValorReserva] = useState<string>("0");
+  const [valorHora, setValorHora] = useState<string>("");
+  const [valorReserva, setValorReserva] = useState<string>("");
   const [luz, setLuz] = useState(false);
   const [camaras, setCamaras] = useState(false);
   const [minutero, setMinutero] = useState(false);
@@ -31,6 +33,7 @@ export default function CrearCampoPlaceholderPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const politicaRef = useRef<PoliticaReservasFormHandle>(null);
 
   useEffect(() => {
     setError(null);
@@ -67,8 +70,9 @@ export default function CrearCampoPlaceholderPage() {
 
     const valorHoraNum = Number(valorHora);
     const valorReservaNum = Number(valorReserva);
-    if (!Number.isFinite(valorHoraNum) || !Number.isFinite(valorReservaNum) || valorHoraNum < 0 || valorReservaNum < 0) {
-      setError("Ingresá montos válidos para valor por hora y valor de reserva.");
+    const montoErr = validarPrecioYSena(valorHoraNum, valorReservaNum);
+    if (montoErr) {
+      setError(montoErr);
       setLoading(false);
       return;
     }
@@ -92,6 +96,14 @@ export default function CrearCampoPlaceholderPage() {
     if (err) {
       setError(err);
       return;
+    }
+
+    if (data?.id) {
+      const pol = await politicaRef.current?.save(canchaId, data.id);
+      if (pol && !pol.ok) {
+        setError(pol.error ?? "El campo se creó, pero no se pudo guardar la política.");
+        return;
+      }
     }
 
     router.push(`/dashboard/canchas/${canchaId}/campos`);
@@ -161,7 +173,7 @@ export default function CrearCampoPlaceholderPage() {
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label htmlFor="valor_hora" className="block text-sm font-medium text-[#1A2E4A]">
-              Valor por hora (ARS)
+              Precio de la cancha (ARS) *
             </label>
             <input
               id="valor_hora"
@@ -177,7 +189,7 @@ export default function CrearCampoPlaceholderPage() {
           </div>
           <div>
             <label htmlFor="valor_reserva" className="block text-sm font-medium text-[#1A2E4A]">
-              Valor reserva / seña (ARS)
+              Seña base (ARS) *
             </label>
             <input
               id="valor_reserva"
@@ -266,6 +278,15 @@ export default function CrearCampoPlaceholderPage() {
             Formatos JPG, PNG, WebP, GIF. Máx. {MAX_FOTO_MB} MB.
           </p>
         </div>
+
+        <PoliticaReservasForm
+          ref={politicaRef}
+          canchaId={canchaId}
+          valorHora={valorHora}
+          valorReserva={valorReserva}
+          formato={tipo}
+          showSaveButton={false}
+        />
 
         <div className="flex gap-3 pt-2">
           <button

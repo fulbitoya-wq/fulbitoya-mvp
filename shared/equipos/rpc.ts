@@ -7,7 +7,7 @@ export type EquiposRpcClient = {
 
 export type RpcResult<T extends object = object> =
   | ({ ok: true } & T)
-  | { ok: false; error: string; quienes?: string; minimo?: number };
+  | { ok: false; error: string; quienes?: string; minimo?: number; alternativas?: unknown };
 
 function parseRpc(data: unknown, fallbackError: string): RpcResult<Record<string, unknown>> {
   if (!data || typeof data !== "object") {
@@ -23,6 +23,7 @@ function parseRpc(data: unknown, fallbackError: string): RpcResult<Record<string
     error: typeof row.error === "string" ? row.error : fallbackError,
     quienes: typeof row.quienes === "string" ? row.quienes : undefined,
     minimo: typeof row.minimo === "number" ? row.minimo : undefined,
+    alternativas: row.alternativas,
   };
 }
 
@@ -205,4 +206,361 @@ export async function rpcEditarConvocados(
   });
   if (!res.ok) return res;
   return { ok: true };
+}
+
+export async function rpcCrearPartido(
+  client: EquiposRpcClient,
+  input: {
+    disponibilidadId: string;
+    equipoId: string;
+    convocados: string[];
+    reglaEmpate: "penales" | "mitad_cada_uno";
+    modalidad: "por_la_cancha" | "amistoso";
+  }
+): Promise<RpcResult<{ desafio_id: string; inscripcion_id: string; monto_total?: number }>> {
+  const res = await call(client, "crear_partido", {
+    p_disponibilidad_id: input.disponibilidadId,
+    p_equipo_id: input.equipoId,
+    p_convocados: input.convocados,
+    p_regla_empate: input.reglaEmpate,
+    p_modalidad: input.modalidad,
+  });
+  if (!res.ok) return res;
+  return {
+    ok: true,
+    desafio_id: String(res.desafio_id ?? ""),
+    inscripcion_id: String(res.inscripcion_id ?? ""),
+    monto_total: typeof res.monto_total === "number" ? res.monto_total : Number(res.monto_total ?? 0),
+  };
+}
+
+export async function rpcInscribirJugadorAmistoso(
+  client: EquiposRpcClient,
+  desafioId: string
+): Promise<RpcResult<{ inscripcion_id: string; estado: string }>> {
+  const res = await call(client, "inscribir_jugador_amistoso", { p_desafio_id: desafioId });
+  if (!res.ok) return res;
+  return {
+    ok: true,
+    inscripcion_id: String(res.inscripcion_id ?? ""),
+    estado: String(res.estado ?? ""),
+  };
+}
+
+export async function rpcConfirmarPagoPrueba(
+  client: EquiposRpcClient,
+  inscripcionId: string
+): Promise<RpcResult> {
+  const res = await call(client, "confirmar_pago_prueba", { p_inscripcion_id: inscripcionId });
+  if (!res.ok) return res;
+  return { ok: true };
+}
+
+export async function rpcMontoAPagarInscripcion(
+  client: EquiposRpcClient,
+  inscripcionId: string
+): Promise<RpcResult<{ monto_total: number; monto_cancha: number; monto_servicio: number }>> {
+  const res = await call(client, "monto_a_pagar_inscripcion", { p_inscripcion_id: inscripcionId });
+  if (!res.ok) return res;
+  return {
+    ok: true,
+    monto_total: Number(res.monto_total ?? 0),
+    monto_cancha: Number(res.monto_cancha ?? 0),
+    monto_servicio: Number(res.monto_servicio ?? 0),
+  };
+}
+
+export async function rpcCalcularCondiciones(
+  client: EquiposRpcClient,
+  disponibilidadId: string,
+  tipoDesafio: "por_la_cancha" | "amistoso"
+): Promise<RpcResult<Record<string, unknown>>> {
+  return call(client, "calcular_condiciones", {
+    p_disponibilidad_id: disponibilidadId,
+    p_tipo_desafio: tipoDesafio,
+  });
+}
+
+export async function rpcCondicionesDeDesafio(
+  client: EquiposRpcClient,
+  desafioId: string
+): Promise<RpcResult<Record<string, unknown>>> {
+  return call(client, "condiciones_de_desafio", { p_desafio_id: desafioId });
+}
+
+export async function rpcOpcionesSinRival(
+  client: EquiposRpcClient,
+  desafioId: string
+): Promise<RpcResult<Record<string, unknown>>> {
+  return call(client, "opciones_sin_rival", { p_desafio_id: desafioId });
+}
+
+export async function rpcDecidirSinRival(
+  client: EquiposRpcClient,
+  desafioId: string,
+  opcion: string,
+  aceptaRiesgo = false
+): Promise<RpcResult> {
+  const res = await call(client, "decidir_sin_rival", {
+    p_desafio_id: desafioId,
+    p_opcion: opcion,
+    p_acepta_riesgo: aceptaRiesgo,
+  });
+  if (!res.ok) return res;
+  return { ok: true };
+}
+
+export async function rpcListarTurnosPublicos(
+  client: EquiposRpcClient
+): Promise<RpcResult<{ turnos: Record<string, unknown>[] }>> {
+  const res = await call(client, "listar_turnos_publicos", {});
+  if (!res.ok) return res;
+  const raw = res.turnos;
+  const turnos = Array.isArray(raw) ? (raw as Record<string, unknown>[]) : [];
+  return { ok: true, turnos };
+}
+
+export async function rpcGetRelojPlc(
+  client: EquiposRpcClient
+): Promise<RpcResult<Record<string, unknown>>> {
+  return call(client, "get_reloj_plc", {});
+}
+
+export async function rpcSetRelojSimulacion(
+  client: EquiposRpcClient,
+  ahora: string | null
+): Promise<RpcResult<Record<string, unknown>>> {
+  return call(client, "set_reloj_simulacion", { p_ahora: ahora });
+}
+
+export async function rpcCorrerTareaPeriodicaPlc(
+  client: EquiposRpcClient
+): Promise<RpcResult<Record<string, unknown>>> {
+  return call(client, "correr_tarea_periodica_plc", {});
+}
+
+export async function rpcListarPrediosPublicos(
+  client: EquiposRpcClient
+): Promise<RpcResult<{ predios: Record<string, unknown>[] }>> {
+  const res = await call(client, "listar_predios_publicos", {});
+  if (!res.ok) return res;
+  const raw = res.predios;
+  return { ok: true, predios: Array.isArray(raw) ? (raw as Record<string, unknown>[]) : [] };
+}
+
+export async function rpcCotizarReserva(
+  client: EquiposRpcClient,
+  disponibilidadId: string,
+  tipoCobro: "sena" | "total"
+): Promise<RpcResult<Record<string, unknown>>> {
+  return call(client, "plc_cotizar_reserva", {
+    p_disponibilidad_id: disponibilidadId,
+    p_tipo_cobro: tipoCobro,
+  });
+}
+
+export async function rpcIniciarCheckoutReserva(
+  client: EquiposRpcClient,
+  disponibilidadId: string,
+  tipoCobro: "sena" | "total",
+  aceptaReglas: boolean
+): Promise<RpcResult<Record<string, unknown>>> {
+  return call(client, "plc_iniciar_checkout_reserva", {
+    p_disponibilidad_id: disponibilidadId,
+    p_tipo_cobro: tipoCobro,
+    p_acepta_reglas: aceptaReglas,
+  });
+}
+
+export async function rpcConfirmarPagoReservaPrueba(
+  client: EquiposRpcClient,
+  holdId: string
+): Promise<RpcResult<{ reserva_id?: string }>> {
+  const res = await call(client, "plc_confirmar_pago_reserva_prueba", { p_hold_id: holdId });
+  if (!res.ok) return res;
+  return { ok: true, reserva_id: res.reserva_id ? String(res.reserva_id) : undefined };
+}
+
+export async function rpcCancelarReservaPlc(
+  client: EquiposRpcClient,
+  reservaId: string
+): Promise<RpcResult<{ reembolso?: number }>> {
+  const res = await call(client, "plc_cancelar_reserva", { p_reserva_id: reservaId });
+  if (!res.ok) return res;
+  return { ok: true, reembolso: Number(res.reembolso ?? 0) };
+}
+
+export async function rpcListarMisReservasPlc(
+  client: EquiposRpcClient
+): Promise<RpcResult<{ reservas: Record<string, unknown>[] }>> {
+  const res = await call(client, "listar_mis_reservas_plc", {});
+  if (!res.ok) return res;
+  const raw = res.reservas;
+  return { ok: true, reservas: Array.isArray(raw) ? (raw as Record<string, unknown>[]) : [] };
+}
+
+export async function rpcCargarReservaWhatsapp(
+  client: EquiposRpcClient,
+  disponibilidadId: string,
+  nombre: string,
+  telefono: string
+): Promise<RpcResult<Record<string, unknown>>> {
+  return call(client, "plc_cargar_reserva_whatsapp", {
+    p_disponibilidad_id: disponibilidadId,
+    p_nombre: nombre,
+    p_telefono: telefono,
+  });
+}
+
+export async function rpcAgendaReservasDia(
+  client: EquiposRpcClient,
+  campoId: string,
+  fecha: string
+): Promise<RpcResult<{ reservas: Record<string, unknown>[]; enlaces: Record<string, unknown>[] }>> {
+  const res = await call(client, "plc_agenda_reservas_dia", {
+    p_campo_id: campoId,
+    p_fecha: fecha,
+  });
+  if (!res.ok) return res;
+  const raw = res.reservas;
+  const enlaces = res.enlaces;
+  return {
+    ok: true,
+    reservas: Array.isArray(raw) ? (raw as Record<string, unknown>[]) : [],
+    enlaces: Array.isArray(enlaces) ? (enlaces as Record<string, unknown>[]) : [],
+  };
+}
+
+export async function rpcVerReclamo(
+  client: EquiposRpcClient,
+  token: string
+): Promise<RpcResult<Record<string, unknown>>> {
+  return call(client, "plc_ver_reclamo", { p_token: token });
+}
+
+export async function rpcEmitirOtpReclamo(
+  client: EquiposRpcClient,
+  token: string
+): Promise<RpcResult<Record<string, unknown>>> {
+  return call(client, "plc_emitir_otp_reclamo", { p_token: token });
+}
+
+export async function rpcVerificarOtpReclamo(
+  client: EquiposRpcClient,
+  token: string,
+  codigo: string
+): Promise<RpcResult<{ reserva_id?: string }>> {
+  const res = await call(client, "plc_verificar_otp_reclamo", {
+    p_token: token,
+    p_codigo: codigo,
+  });
+  if (!res.ok) return res;
+  return { ok: true, reserva_id: res.reserva_id ? String(res.reserva_id) : undefined };
+}
+
+export async function rpcCrearEnlacePago(
+  client: EquiposRpcClient,
+  input: {
+    disponibilidadId: string;
+    nombre: string;
+    telefono: string;
+    montoSena: number;
+    mensaje?: string | null;
+  }
+): Promise<RpcResult<Record<string, unknown>>> {
+  return call(client, "plc_crear_enlace_pago", {
+    p_disponibilidad_id: input.disponibilidadId,
+    p_nombre: input.nombre,
+    p_telefono: input.telefono,
+    p_monto_sena: input.montoSena,
+    p_mensaje: input.mensaje ?? null,
+  });
+}
+
+export async function rpcCargarReservaManual(
+  client: EquiposRpcClient,
+  disponibilidadId: string,
+  nombre: string,
+  telefono: string,
+  cobroExterno: "sena_fuera" | "a_cobrar_predio"
+): Promise<RpcResult<Record<string, unknown>>> {
+  return call(client, "plc_cargar_reserva_manual", {
+    p_disponibilidad_id: disponibilidadId,
+    p_nombre: nombre,
+    p_telefono: telefono,
+    p_cobro_externo: cobroExterno,
+  });
+}
+
+export async function rpcVerEnlacePago(
+  client: EquiposRpcClient,
+  token: string
+): Promise<RpcResult<Record<string, unknown>>> {
+  return call(client, "plc_ver_enlace", { p_token: token });
+}
+
+export async function rpcCotizarEnlacePago(
+  client: EquiposRpcClient,
+  token: string,
+  tipoCobro: string
+): Promise<RpcResult<Record<string, unknown>>> {
+  return call(client, "plc_cotizar_enlace", { p_token: token, p_tipo_cobro: tipoCobro });
+}
+
+export async function rpcIniciarCheckoutEnlace(
+  client: EquiposRpcClient,
+  token: string,
+  tipoCobro: string,
+  aceptaReglas: boolean
+): Promise<RpcResult<Record<string, unknown>>> {
+  return call(client, "plc_iniciar_checkout_enlace", {
+    p_token: token,
+    p_tipo_cobro: tipoCobro,
+    p_acepta_reglas: aceptaReglas,
+  });
+}
+
+export async function rpcPredioPublico(
+  client: EquiposRpcClient,
+  slug: string
+): Promise<RpcResult<Record<string, unknown>>> {
+  return call(client, "plc_predio_publico", { p_slug: slug });
+}
+
+export async function rpcSlugDeCancha(
+  client: EquiposRpcClient,
+  canchaId: string
+): Promise<RpcResult<{ slug?: string }>> {
+  const res = await call(client, "plc_slug_de_cancha", { p_cancha_id: canchaId });
+  if (!res.ok) return res;
+  return { ok: true, slug: res.slug ? String(res.slug) : undefined };
+}
+
+export async function rpcGuardarListaReserva(
+  client: EquiposRpcClient,
+  reservaId: string,
+  nombres: string[]
+): Promise<RpcResult<Record<string, unknown>>> {
+  return call(client, "plc_guardar_lista_reserva", { p_reserva_id: reservaId, p_nombres: nombres });
+}
+
+export async function rpcListarListaReserva(
+  client: EquiposRpcClient,
+  reservaId: string
+): Promise<RpcResult<{ nombres: string[] }>> {
+  const res = await call(client, "plc_listar_lista_reserva", { p_reserva_id: reservaId });
+  if (!res.ok) return res;
+  const raw = res.nombres;
+  const nombres = Array.isArray(raw) ? raw.map((x) => String(x)) : [];
+  return { ok: true, nombres };
+}
+
+export async function rpcAbrirBuscaGente(
+  client: EquiposRpcClient,
+  reservaId: string,
+  abrir: boolean
+): Promise<RpcResult<{ busca_gente?: boolean }>> {
+  const res = await call(client, "plc_abrir_busca_gente", { p_reserva_id: reservaId, p_abrir: abrir });
+  if (!res.ok) return res;
+  return { ok: true, busca_gente: Boolean(res.busca_gente) };
 }

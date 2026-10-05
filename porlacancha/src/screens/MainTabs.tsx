@@ -3,7 +3,7 @@ import { AppState, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { colors } from "@shared/design";
 import { useAuth } from "../auth/AuthProvider";
-import { getDesafiosPublicos, type Desafio } from "../lib/desafios";
+import { getDesafioPorId, getDesafiosPublicos, type Desafio } from "../lib/desafios";
 import { listInvitacionesRecibidas, listMisEquipos, equiposDondeEsCapitan, type EquipoListItem } from "../lib/equipos";
 import { toggleFavorito } from "../lib/favoritos";
 import { getInscripcionMia, type InscripcionMia } from "../lib/inscripciones";
@@ -41,10 +41,13 @@ import { EquiposListScreen } from "./equipos/EquiposListScreen";
 import { InvitacionesScreen } from "./equipos/InvitacionesScreen";
 import { PlayersSearchScreen } from "./jugadores/PlayersSearchScreen";
 import { PlayerPublicProfileScreen } from "./jugadores/PlayerPublicProfileScreen";
-import { PorLaCanchaBottomTabBar } from "../ui";
+import { CrearPartidoScreen } from "./CrearPartidoScreen";
+import { HomeCaminosScreen } from "./HomeCaminosScreen";
+import { ReservarCanchaScreen } from "./ReservarCanchaScreen";
 import type { SearchPlayer } from "../lib/player-search";
 
 type Tab = "explore" | "matches" | "teams" | "profile";
+type ExploreView = "hub" | "partidos" | "reservar";
 type TeamsView =
   | { name: "list" }
   | { name: "create" }
@@ -61,6 +64,7 @@ export function MainTabs({ onRequestAuth }: Props) {
   const { session, signOut, profile } = useAuth();
   const loggedIn = Boolean(session?.user);
   const [tab, setTab] = useState<Tab>("explore");
+  const [exploreView, setExploreView] = useState<ExploreView>("hub");
   const [preferMap, setPreferMap] = useState(false);
   const [detalle, setDetalle] = useState<Desafio | null>(null);
   const [teamsView, setTeamsView] = useState<TeamsView>({ name: "list" });
@@ -81,6 +85,7 @@ export function MainTabs({ onRequestAuth }: Props) {
   const [joinOpen, setJoinOpen] = useState(false);
   const [plusSearch, setPlusSearch] = useState(false);
   const [plusPlayer, setPlusPlayer] = useState<SearchPlayer | null>(null);
+  const [crearPartidoOpen, setCrearPartidoOpen] = useState(false);
   const [inscribir, setInscribir] = useState<{ desafio: Desafio; existing: InscripcionMia | null } | null>(null);
   const [mia, setMia] = useState<InscripcionMia | null>(null);
   const resumedKey = useRef<string | null>(null);
@@ -156,13 +161,14 @@ export function MainTabs({ onRequestAuth }: Props) {
       return;
     }
     const ids = equipos.map((e) => e.id);
-    void getInscripcionMia(detalle.id, ids).then(setMia);
+    void getInscripcionMia(detalle.id, ids, profile.id).then(setMia);
   }, [detalle, equipos, profile]);
 
   const openMap = (id?: string) => {
     if (id) setSelectedId(id);
     setDetalle(null);
     setPreferMap(true);
+    setExploreView("partidos");
     setTab("explore");
   };
 
@@ -184,7 +190,8 @@ export function MainTabs({ onRequestAuth }: Props) {
     const caps = equiposDondeEsCapitan(equipos);
     const existing = await getInscripcionMia(
       d.id,
-      caps.map((e) => e.id)
+      caps.map((e) => e.id),
+      profile?.id
     );
     setInscribir({ desafio: d, existing });
   };
@@ -265,7 +272,7 @@ export function MainTabs({ onRequestAuth }: Props) {
     let cancelled = false;
     const go = async () => {
       const action = await peekPendingAction();
-      if (cancelled || !action || action.kind === "join_token") return;
+      if (cancelled || !action || action.kind === "join_token" || action.kind === "claim_reserva") return;
       if (action.kind === "inscribir" && teamsLoading) return;
       if (action.kind !== "open_inbox" && action.kind !== "favorite" && !profileReadyForActions(profile)) return;
       const key = JSON.stringify(action);
@@ -437,6 +444,28 @@ export function MainTabs({ onRequestAuth }: Props) {
               });
             }}
           />
+        ) : crearPartidoOpen ? (
+          <CrearPartidoScreen
+            captainTeams={equiposDondeEsCapitan(equipos)}
+            onBack={() => setCrearPartidoOpen(false)}
+            onCreateTeam={() => {
+              setCrearPartidoOpen(false);
+              void queueOrRun({ kind: "create_team" }, () => {
+                setTeamsView({ name: "create" });
+                setTab("teams");
+              });
+            }}
+            onCreated={(desafioId) => {
+              setCrearPartidoOpen(false);
+              void refreshDesafios().then(async (list) => {
+                const d = list.find((x) => x.id === desafioId) ?? (await getDesafioPorId(desafioId));
+                if (d) {
+                  setDetalle(d);
+                  setSelectedId(d.id);
+                }
+              });
+            }}
+          />
         ) : plusPlayer ? (
           <PlayerPublicProfileScreen
             player={plusPlayer}
@@ -477,16 +506,26 @@ export function MainTabs({ onRequestAuth }: Props) {
             guest={!loggedIn}
             inscriptoComo={
               mia
-                ? equiposDondeEsCapitan(equipos).some((e) => e.id === mia.equipoId)
+                ? mia.equipoId && equiposDondeEsCapitan(equipos).some((e) => e.id === mia.equipoId)
                   ? "capitan"
                   : "miembro"
                 : null
             }
+            inscripcionId={mia?.id}
+            estadoInscripcion={mia?.estado}
             onBack={() => setDetalle(null)}
             onInscribir={() => {
               void queueOrRun({ kind: "inscribir", desafioId: detalle.id }, () => startInscribir(detalle));
             }}
             onOpenMap={() => openMap(detalle.id)}
+            onPaid={() => {
+              void refreshDesafios().then((list) => {
+                const d = list.find((x) => x.id === detalle.id);
+                if (d) setDetalle(d);
+              });
+              const ids = equipos.map((e) => e.id);
+              void getInscripcionMia(detalle.id, ids, profile?.id).then(setMia);
+            }}
           />
         ) : tab === "matches" ? (
           <MisPartidosScreen
@@ -510,6 +549,7 @@ export function MainTabs({ onRequestAuth }: Props) {
             }}
             onOpenExplore={() => {
               setPreferMap(false);
+              setExploreView("hub");
               setTab("explore");
             }}
             onCreateTeam={() => {
@@ -529,7 +569,16 @@ export function MainTabs({ onRequestAuth }: Props) {
           />
         ) : tab === "teams" ? (
           teamsBody()
-        ) : (
+        ) : exploreView === "reservar" ? (
+          <ReservarCanchaScreen
+            onBack={() => setExploreView("hub")}
+            onRequestAuth={onRequestAuth}
+            onDone={() => {
+              setExploreView("hub");
+              setTab("matches");
+            }}
+          />
+        ) : exploreView === "partidos" ? (
           <ExplorarScreen
             items={items}
             loading={loading}
@@ -542,11 +591,26 @@ export function MainTabs({ onRequestAuth }: Props) {
             unreadNotifs={loggedIn ? unreadNotifs : 0}
             onOpenNotifs={loggedIn ? openNotifs : undefined}
           />
+        ) : (
+          <HomeCaminosScreen
+            unreadNotifs={loggedIn ? unreadNotifs : 0}
+            onOpenNotifs={loggedIn ? openNotifs : undefined}
+            onReservar={() => {
+              if (needAuth()) return;
+              setExploreView("reservar");
+            }}
+            onPartidos={() => {
+              setPreferMap(false);
+              setExploreView("partidos");
+            }}
+          />
         )}
       </View>
       {!detalle &&
       !notifsOpen &&
       !inscribir &&
+      !crearPartidoOpen &&
+      exploreView !== "reservar" &&
       !plusSearch &&
       !plusPlayer &&
       !hideProfileNav &&
@@ -558,6 +622,7 @@ export function MainTabs({ onRequestAuth }: Props) {
           onTabPress={(next) => {
             if (next === "explore") {
               setPreferMap(false);
+              setExploreView("hub");
               setTab("explore");
               return;
             }
@@ -600,7 +665,13 @@ export function MainTabs({ onRequestAuth }: Props) {
         onBuscarDesafio={() => {
           setPlusOpen(false);
           setPreferMap(true);
+          setExploreView("partidos");
           setTab("explore");
+        }}
+        onPublicarPartido={() => {
+          setPlusOpen(false);
+          if (needAuth()) return;
+          setCrearPartidoOpen(true);
         }}
       />
       <UnirseEnlaceSheet

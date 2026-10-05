@@ -1,7 +1,9 @@
 import { Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from "react";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, radius, space } from "@shared/design";
+import { useAuth } from "../auth/AuthProvider";
 import {
   etiquetaEmpiezaEn,
   etiquetaEstado,
@@ -15,8 +17,18 @@ import {
   formatPremioArriba,
   type Desafio,
 } from "../lib/desafios";
+import {
+  boolFlag,
+  confirmarPagoPrueba,
+  condicionesDeDesafio,
+  decidirSinRival,
+  inscribirJugadorAmistoso,
+  montoAPagar,
+  opcionesSinRival,
+  pesos,
+} from "../lib/plc";
 import { ChevronLeft, MapPin, Share2, iconStroke } from "../lib/icons";
-import { Button, Chip, Mute } from "../ui";
+import { Button, Chip, Mute, showConfirm, showNotice } from "../ui";
 import { EquipoCupos } from "../ui/EquipoCupos";
 import { PitchCover } from "../ui/PitchCover";
 import { typeStyle } from "../ui/textStyle";
@@ -25,14 +37,29 @@ type Props = {
   desafio: Desafio;
   guest: boolean;
   inscriptoComo?: "capitan" | "miembro" | null;
+  inscripcionId?: string | null;
+  estadoInscripcion?: string | null;
   onBack: () => void;
   onInscribir: () => void;
   onOpenMap: () => void;
+  onPaid?: () => void;
 };
 
-export function DesafioDetalleScreen({ desafio, guest, inscriptoComo, onBack, onInscribir, onOpenMap }: Props) {
+export function DesafioDetalleScreen({
+  desafio,
+  guest,
+  inscriptoComo,
+  inscripcionId,
+  estadoInscripcion,
+  onBack,
+  onInscribir,
+  onOpenMap,
+  onPaid,
+}: Props) {
   const insets = useSafeAreaInsets();
+  const { profile } = useAuth();
   const solo = esSoloCancha(Number(desafio.premio));
+  const amistoso = desafio.modalidad === "amistoso";
   const lugar = desafio.barrio?.trim()
     ? `${desafio.direccion} · ${desafio.barrio}`
     : desafio.direccion;
@@ -44,30 +71,122 @@ export function DesafioDetalleScreen({ desafio, guest, inscriptoComo, onBack, on
   const lat = Number(desafio.lat);
   const lng = Number(desafio.lng);
 
+  const [cond, setCond] = useState<Record<string, unknown> | null>(null);
+  const [opc, setOpc] = useState<Record<string, unknown> | null>(null);
+  const [pago, setPago] = useState<{ total: number; cancha: number; servicio: number } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    const [c, o] = await Promise.all([condicionesDeDesafio(desafio.id), opcionesSinRival(desafio.id)]);
+    if (c.ok) setCond(c.cond);
+    if (o.ok) setOpc(o.opc);
+    if (inscripcionId && estadoInscripcion === "pendiente_pago") {
+      const m = await montoAPagar(inscripcionId);
+      if (m.ok) setPago({ total: m.montoTotal, cancha: m.montoCancha, servicio: m.montoServicio });
+      else setPago(null);
+    } else {
+      setPago(null);
+    }
+  };
+
+  useEffect(() => {
+    void load();
+  }, [desafio.id, inscripcionId, estadoInscripcion, profile?.id]);
+
   const cupoLleno = (desafio.inscritos?.length ?? 0) >= (desafio.cupos || 2);
   const inscribir = () => {
     onInscribir();
   };
   const ctaLabel = guest
     ? "Ingresá para inscribir"
-    : inscriptoComo === "capitan"
-      ? "Editar convocados"
-      : inscriptoComo === "miembro"
-        ? "Tu equipo ya está"
-        : cupoLleno
-          ? "Sin lugar"
-          : "Inscribir mi equipo";
-  const ctaOff = Boolean(!guest && (inscriptoComo === "miembro" || (!inscriptoComo && cupoLleno)));
+    : estadoInscripcion === "pendiente_pago"
+      ? "Pagar seña de prueba"
+      : inscriptoComo === "capitan"
+        ? "Editar convocados"
+        : inscriptoComo === "miembro"
+          ? "Tu equipo ya está"
+          : cupoLleno && !amistoso
+            ? "Sin lugar"
+            : amistoso && !inscriptoComo
+              ? "Inscribir equipo o anotarme"
+              : "Inscribir mi equipo";
+  const ctaOff = Boolean(
+    !guest &&
+      estadoInscripcion !== "pendiente_pago" &&
+      (inscriptoComo === "miembro" || (!inscriptoComo && cupoLleno && !amistoso))
+  );
 
   const compartir = () => {
     void Share.share({
-      message: `${desafio.titulo} · ${formatPremioArriba(Number(desafio.premio))}`,
+      message: `${desafio.titulo} · ${etiquetaModalidad(Number(desafio.premio), desafio.modalidad)}`,
     });
   };
 
+  const pagar = async () => {
+    if (!inscripcionId) return;
+    setBusy(true);
+    const res = await confirmarPagoPrueba(inscripcionId);
+    setBusy(false);
+    if (!res.ok) {
+      showNotice("No se pudo confirmar el pago", res.error);
+      return;
+    }
+    showNotice("Pago de prueba", "La inscripción quedó confirmada. No se cobró con Mercado Pago.");
+    onPaid?.();
+    void load();
+  };
+
+  const suelto = async () => {
+    setBusy(true);
+    const res = await inscribirJugadorAmistoso(desafio.id);
+    setBusy(false);
+    if (!res.ok) {
+      showNotice("No te pudimos anotar", res.error);
+      return;
+    }
+    if (res.estado === "pendiente_pago") {
+      showNotice("Reservamos tu lugar", "Confirmá el pago de prueba para quedar anotado.");
+    } else {
+      showNotice("Anotado", "Quedaste en el amistoso.");
+    }
+    onPaid?.();
+  };
+
+  const decidir = (opcion: string, riesgo = false) => {
+    const run = () => {
+      void decidirSinRival(desafio.id, opcion, riesgo).then((res) => {
+        if (!res.ok) {
+          showNotice("No se pudo guardar", res.error);
+          return;
+        }
+        showNotice("Listo", "Quedó registrada tu decisión.");
+        onPaid?.();
+        void load();
+      });
+    };
+    if (opcion === "quedarme" || opcion === "seguir_inicio") {
+      showConfirm({
+        title: "Confirmar",
+        body: typeof opc?.texto_riesgo === "string" ? opc.texto_riesgo : "Si nadie se suma, se cobra la cancha completa.",
+        cancelLabel: "Volver",
+        confirmLabel: "Confirmo",
+        onConfirm: () => run(),
+      });
+      return;
+    }
+    run();
+  };
+
+  const stickyLabel =
+    estadoInscripcion === "pendiente_pago" && pago
+      ? pesos(pago.total)
+      : solo
+        ? etiquetaModalidad(Number(desafio.premio), desafio.modalidad)
+        : formatPremio(Number(desafio.premio));
+
   return (
     <View style={styles.page}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ paddingBottom: 140 }} keyboardShouldPersistTaps="handled">
         <View>
           <PitchCover height={220} variant="flush">
             <View style={[styles.heroNav, { paddingTop: Math.max(insets.top, space[12]) }]}>
@@ -100,7 +219,7 @@ export function DesafioDetalleScreen({ desafio, guest, inscriptoComo, onBack, on
               <Text style={styles.fecha}>{formatFechaCorta(desafio.fecha)}</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.mod}>{etiquetaModalidad(Number(desafio.premio))}</Text>
+              <Text style={styles.mod}>{etiquetaModalidad(Number(desafio.premio), desafio.modalidad)}</Text>
               {solo ? null : <Text style={styles.prize}>{formatPremioArriba(Number(desafio.premio))}</Text>}
             </View>
           </View>
@@ -144,30 +263,91 @@ export function DesafioDetalleScreen({ desafio, guest, inscriptoComo, onBack, on
             </Text>
           ))}
           {(desafio.inscritos?.length ?? 0) < (desafio.cupos || 2) ? (
-            <Mute>Buscando rival.</Mute>
+            <Mute>{amistoso ? "Falta gente o un rival." : "Buscando rival."}</Mute>
+          ) : null}
+
+          <Text style={styles.h2}>Condiciones</Text>
+          {cond ? (
+            <>
+              <Mute>{typeof cond.mensaje_tramo === "string" ? cond.mensaje_tramo : ""}</Mute>
+              <Mute>Cancha {pesos(cond.precio_cancha)}</Mute>
+              <Mute>
+                Tu lado {pesos(cond.monto_equipo_a)} · rival {pesos(cond.monto_rival_equipo)}
+              </Mute>
+              {amistoso ? <Mute>Jugador suelto {pesos(cond.monto_rival_jugador)}</Mute> : null}
+              <Mute>Sin rival se retiene {pesos(cond.sena_sin_rival)}.</Mute>
+            </>
+          ) : (
+            <Mute>Cargando condiciones…</Mute>
+          )}
+
+          {opc && boolFlag(opc, "puede_cancelar_gratis") ? (
+            <View style={{ marginTop: space[12] }}>
+              <Button label="Cancelar sin cargo" variant="secondary" onPress={() => decidir("cancelar_gratis")} />
+            </View>
+          ) : null}
+          {opc && boolFlag(opc, "puede_seguir_cierre") ? (
+            <View style={{ marginTop: space[8] }}>
+              <Button label="Seguir buscando hasta el cierre" variant="secondary" onPress={() => decidir("seguir_cierre")} />
+            </View>
+          ) : null}
+          {opc && boolFlag(opc, "puede_seguir_inicio") ? (
+            <View style={{ marginTop: space[8] }}>
+              <Button label="Seguir hasta el inicio" variant="secondary" onPress={() => decidir("seguir_inicio", true)} />
+            </View>
+          ) : null}
+          {opc && boolFlag(opc, "puede_quedarme") ? (
+            <View style={{ marginTop: space[8] }}>
+              <Button label="Quedarme con la cancha" variant="secondary" onPress={() => decidir("quedarme", true)} />
+            </View>
+          ) : null}
+          {opc && boolFlag(opc, "puede_liberar") ? (
+            <View style={{ marginTop: space[8] }}>
+              <Button label="Liberar turno (seña)" variant="secondary" onPress={() => decidir("liberar")} />
+            </View>
+          ) : null}
+          {opc && boolFlag(opc, "puede_conservar") ? (
+            <View style={{ marginTop: space[8] }}>
+              <Button label="Conservar el turno" variant="secondary" onPress={() => decidir("conservar")} />
+            </View>
           ) : null}
 
           <Text style={styles.h2}>¿Cómo funciona?</Text>
           <Mute>
-            El premio lo pone quien arma el desafío. El capitán inscribe al equipo y marca quiénes
-            juegan. En este piloto no hay cobro: la inscripción queda confirmada.
+            {amistoso
+              ? "Amistoso: el equipo que publica paga la cancha. Si se completa el rival, se devuelve la mitad. Podés sumarte suelto."
+              : "Por la cancha: cada equipo paga lo que calcula el predio. Si no hay rival, se aplica la seña según el plazo."}
           </Mute>
+          <Mute>En este entorno el pago es de prueba: no pasa por Mercado Pago de FulbitoYa.</Mute>
           {copyVisible ? <Text style={styles.body}>{copyVisible}</Text> : null}
+
+          {amistoso && !guest && !inscriptoComo ? (
+            <View style={{ marginTop: space[16] }}>
+              <Button label="Anotarme suelto" variant="secondary" onPress={() => void suelto()} loading={busy} />
+            </View>
+          ) : null}
         </View>
       </ScrollView>
 
       <View style={[styles.sticky, { paddingBottom: insets.bottom + space[12] }]}>
         <View>
-          <Text style={styles.ctaKicker}>{solo ? "Modalidad" : "Premio"}</Text>
-          <Text style={styles.ctaPrize}>
-            {solo ? "Solo cancha" : formatPremio(Number(desafio.premio))}
+          <Text style={styles.ctaKicker}>
+            {estadoInscripcion === "pendiente_pago" ? "A pagar" : solo ? "Modalidad" : "Premio"}
           </Text>
+          <Text style={styles.ctaPrize}>{stickyLabel}</Text>
         </View>
         <View style={{ flex: 1 }}>
           <Button
-            label={ctaLabel}
-            onPress={inscribir}
-            disabled={ctaOff}
+            label={busy && estadoInscripcion === "pendiente_pago" ? "Confirmando..." : ctaLabel}
+            onPress={() => {
+              if (estadoInscripcion === "pendiente_pago") {
+                void pagar();
+                return;
+              }
+              inscribir();
+            }}
+            disabled={ctaOff || busy}
+            loading={busy && estadoInscripcion === "pendiente_pago"}
           />
         </View>
       </View>

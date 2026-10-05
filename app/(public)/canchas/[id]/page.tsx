@@ -1,5 +1,6 @@
 import DisponibilidadCalendario from "@/components/canchas/DisponibilidadCalendario";
 import { supabase } from "@/lib/supabase";
+import { textoReservaComun } from "@/lib/politica";
 import {
   MapPin,
   Car,
@@ -68,6 +69,14 @@ export default async function CanchaDetallePage({ params }: Props) {
   const locationText = [provNombre?.data?.nombre, partNombre?.data?.nombre, locNombre?.data?.nombre]
     .filter(Boolean)
     .join(" · ");
+
+  const { data: politica } = await supabase
+    .from("politica_predio")
+    .select("reserva_sena_nunca_devuelve, reserva_devolucion_total_horas, reserva_cobro_total_horas")
+    .eq("cancha_id", id)
+    .maybeSingle();
+
+  const textoPolitica = textoReservaComun(politica);
 
   return (
     <div className="mx-auto max-w-7xl px-4 pt-28 pb-10 sm:px-6 lg:px-8">
@@ -139,6 +148,11 @@ export default async function CanchaDetallePage({ params }: Props) {
               <p className={`mt-4 text-sm ${cancha.fondo_url ? "text-white/90" : "text-[#1A2E4A]/70"}`}>
                 Seleccioná una fecha para ver horarios disponibles.
               </p>
+              {textoPolitica && (
+                <p className={`mt-3 max-w-2xl text-sm ${cancha.fondo_url ? "text-white/90" : "text-[#1A2E4A]/80"}`}>
+                  {textoPolitica}
+                </p>
+              )}
             </div>
           </div>
         </div>

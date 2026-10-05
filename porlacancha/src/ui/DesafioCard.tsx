@@ -40,7 +40,7 @@ export function DesafioCard({ desafio, onPress, compact }: Props) {
               <Text style={styles.hora}>{formatHora(desafio.hora_inicio)}</Text>
             </View>
             <View style={styles.copy}>
-              <Text style={styles.mod}>{etiquetaModalidad(Number(desafio.premio))}</Text>
+              <Text style={styles.mod}>{etiquetaModalidad(Number(desafio.premio), desafio.modalidad)}</Text>
               {solo ? null : <Text style={styles.prize}>{formatPremioArriba(Number(desafio.premio))}</Text>}
             </View>
           </View>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as Linking from "expo-linking";
 import { useAuth } from "../auth/AuthProvider";
+import { rememberClaimTokenFromUrl } from "../lib/claim-token";
 import { aplicarTokenUnirse } from "../lib/join-flow";
 import { rememberJoinTokenFromUrl } from "../lib/join-token";
 import {
@@ -12,6 +13,7 @@ import {
 import { CompletePhoneScreen } from "./auth/CompletePhoneScreen";
 import { CompleteUsernameScreen } from "./auth/CompleteUsernameScreen";
 import { MainTabs } from "./MainTabs";
+import { PagoEnlaceScreen } from "./PagoEnlaceScreen";
 
 type Props = {
   onRequestAuth: () => void;
@@ -20,18 +22,40 @@ type Props = {
 export function LoggedInShell({ onRequestAuth }: Props) {
   const { session, profile } = useAuth();
   const [gate, setGate] = useState<null | "username" | "phone">(null);
+  const [claimToken, setClaimToken] = useState<string | null>(null);
   const triedJoin = useRef<string | null>(null);
+  const askedAuthForClaim = useRef(false);
+  const requestAuthRef = useRef(onRequestAuth);
+  requestAuthRef.current = onRequestAuth;
 
   useEffect(() => {
     let cancelled = false;
 
     const run = async () => {
-      if (!session) {
-        if (!cancelled) setGate(null);
-        return;
-      }
       const action = await peekPendingAction();
       if (cancelled) return;
+
+      if (!session) {
+        setGate(null);
+        if (action?.kind === "claim_reserva") {
+          setClaimToken(action.token);
+          if (!askedAuthForClaim.current) {
+            askedAuthForClaim.current = true;
+            requestAuthRef.current();
+          }
+        } else {
+          setClaimToken(null);
+        }
+        return;
+      }
+
+      if (action?.kind === "claim_reserva") {
+        setClaimToken(action.token);
+        setGate(null);
+        return;
+      }
+
+      setClaimToken(null);
       if (!action) {
         setGate(null);
         return;
@@ -60,8 +84,8 @@ export function LoggedInShell({ onRequestAuth }: Props) {
     void run();
 
     const sub = Linking.addEventListener("url", ({ url }) => {
-      rememberJoinTokenFromUrl(url).then(() => {
-        if (session) void run();
+      Promise.all([rememberJoinTokenFromUrl(url), rememberClaimTokenFromUrl(url)]).then(() => {
+        void run();
       });
     });
 
@@ -70,6 +94,22 @@ export function LoggedInShell({ onRequestAuth }: Props) {
       sub.remove();
     };
   }, [session, profile, profile?.username, profile?.telefono]);
+
+  if (session && claimToken) {
+    return (
+      <PagoEnlaceScreen
+        token={claimToken}
+        onDone={async () => {
+          await clearPendingAction();
+          setClaimToken(null);
+        }}
+        onCancel={async () => {
+          await clearPendingAction();
+          setClaimToken(null);
+        }}
+      />
+    );
+  }
 
   if (session && gate === "username") {
     return <CompleteUsernameScreen />;

@@ -6,6 +6,7 @@ const LEGACY_JOIN = "porlacancha_pending_join_token";
 
 export type PendingAction =
   | { kind: "join_token"; token: string }
+  | { kind: "claim_reserva"; token: string }
   | { kind: "create_team" }
   | { kind: "open_inbox" }
   | { kind: "accept_invite"; solicitudId: string }

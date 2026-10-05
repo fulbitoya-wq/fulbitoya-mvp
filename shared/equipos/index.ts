@@ -23,9 +23,68 @@ export {
   rpcSalirDelEquipo,
   rpcSolicitarIngresoPorToken,
   rpcTransferirCapitania,
+  rpcCrearPartido,
+  rpcInscribirJugadorAmistoso,
+  rpcConfirmarPagoPrueba,
+  rpcMontoAPagarInscripcion,
+  rpcCalcularCondiciones,
+  rpcCondicionesDeDesafio,
+  rpcOpcionesSinRival,
+  rpcDecidirSinRival,
+  rpcListarTurnosPublicos,
+  rpcGetRelojPlc,
+  rpcSetRelojSimulacion,
+  rpcCorrerTareaPeriodicaPlc,
+  rpcListarPrediosPublicos,
+  rpcCotizarReserva,
+  rpcIniciarCheckoutReserva,
+  rpcConfirmarPagoReservaPrueba,
+  rpcCancelarReservaPlc,
+  rpcListarMisReservasPlc,
+  rpcCargarReservaWhatsapp,
+  rpcAgendaReservasDia,
+  rpcVerReclamo,
+  rpcEmitirOtpReclamo,
+  rpcVerificarOtpReclamo,
+  rpcCrearEnlacePago,
+  rpcCargarReservaManual,
+  rpcVerEnlacePago,
+  rpcCotizarEnlacePago,
+  rpcIniciarCheckoutEnlace,
+  rpcPredioPublico,
+  rpcSlugDeCancha,
+  rpcGuardarListaReserva,
+  rpcListarListaReserva,
+  rpcAbrirBuscaGente,
   type EquiposRpcClient,
   type RpcResult,
 } from "./rpc";
+
+export function enlaceReclamoWeb(webBaseUrl: string, token: string): string {
+  const base = webBaseUrl.replace(/\/$/, "");
+  return `${base}/r/${token}`;
+}
+
+export function enlacePredioWeb(webBaseUrl: string, slug: string): string {
+  const base = webBaseUrl.replace(/\/$/, "");
+  return `${base}/p/${slug}`;
+}
+
+export function mensajeWhatsappReserva(input: {
+  nombre: string;
+  fecha: string;
+  hora: string;
+  predio: string;
+  campo?: string;
+  link: string;
+  sena?: number;
+}): string {
+  const sena =
+    input.sena != null
+      ? `$${Math.round(input.sena).toLocaleString("es-AR")}`
+      : "la seña";
+  return `Hola ${input.nombre}, te dejo el ${input.fecha} a las ${input.hora} en ${input.predio}. Pagá la seña de ${sena} acá para confirmar: ${input.link}. Desde la app podés ver tu partido, compartirlo con tus amigos, sumar jugadores o abrir el partido si te falta gente.`;
+}
 export {
   guardarUsername,
   interpretarErrorUsername,

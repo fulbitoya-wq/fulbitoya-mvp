@@ -70,7 +70,11 @@ export function InscribirEquipoScreen({ desafio, captainTeams, existing, onBack,
     }
     showNotice(
       existing ? "Convocados actualizados" : "Equipo inscripto",
-      existing ? "Quedó la nueva lista." : "Sin cobro por ahora: la inscripción quedó confirmada."
+      existing
+        ? "Quedó la nueva lista."
+        : res.ok && "estado" in res && res.estado === "pendiente_pago"
+          ? "Reservamos el lugar 15 minutos. Confirmá el pago de prueba en el partido."
+          : "La inscripción quedó confirmada."
     );
     onDone();
   };

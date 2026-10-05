@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { Animated, Modal, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, space } from "@shared/design";
-import { Link, MapPin, Search, Users, iconStroke } from "../lib/icons";
+import { Calendar, Link, MapPin, Search, Users, iconStroke } from "../lib/icons";
 import { fontFamily } from "../lib/fonts";
 import { Button } from "../ui";
 
@@ -13,6 +13,7 @@ type Props = {
   onBuscarJugadores: () => void;
   onUnirmeEnlace: () => void;
   onBuscarDesafio: () => void;
+  onPublicarPartido: () => void;
 };
 
 export function PlusActionsSheet({
@@ -22,6 +23,7 @@ export function PlusActionsSheet({
   onBuscarJugadores,
   onUnirmeEnlace,
   onBuscarDesafio,
+  onPublicarPartido,
 }: Props) {
   const insets = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(420)).current;
@@ -139,6 +141,11 @@ export function PlusActionsSheet({
               label="Buscar desafío cerca"
               onPress={onBuscarDesafio}
               icon={<MapPin color={colors.navyDark} size={20} strokeWidth={iconStroke} />}
+            />
+            <Button
+              label="Publicar partido"
+              onPress={onPublicarPartido}
+              icon={<Calendar color={colors.navyDark} size={20} strokeWidth={iconStroke} />}
             />
           </View>
         </Animated.View>

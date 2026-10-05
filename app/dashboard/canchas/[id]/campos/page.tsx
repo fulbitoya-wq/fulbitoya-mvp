@@ -94,36 +94,40 @@ export default function CanchaCamposPage() {
             <ul className="space-y-2">
               {campos.map((campo) => (
                 <li key={campo.id} className="rounded-xl border border-[#E0E0E0] bg-white p-4">
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex min-w-0 items-start gap-3">
-                      {campo.foto_url && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={campo.foto_url}
-                          alt={`Foto del campo ${campo.nombre}`}
-                          className="mt-1 h-16 w-16 shrink-0 rounded-lg border border-[#E0E0E0] object-cover"
-                        />
-                      )}
-                      <p className="truncate font-semibold text-[#1A2E4A]">{campo.nombre}</p>
-                      <p className="text-sm text-[#1A2E4A]/70">
-                        Tipo: {campo.tipo ?? "—"} - Superficie: {campo.superficie ?? "—"}
+                  <div className="flex min-w-0 flex-col gap-1">
+                    {campo.foto_url && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={campo.foto_url}
+                        alt={`Foto del campo ${campo.nombre}`}
+                        className="h-16 w-16 shrink-0 rounded-lg border border-[#E0E0E0] object-cover"
+                      />
+                    )}
+                    <p className="truncate font-semibold text-[#1A2E4A]">{campo.nombre}</p>
+                    <p className="text-sm text-[#1A2E4A]/70">
+                      Tipo: {campo.tipo ?? "—"} - Superficie: {campo.superficie ?? "—"}
+                    </p>
+                    <p className="text-sm text-[#1A2E4A]/70">
+                      Precio/hora: ${Number(campo.valor_hora ?? 0).toLocaleString("es-AR")} · Reserva: ${Number(campo.valor_reserva ?? 0).toLocaleString("es-AR")}
+                    </p>
+                    {(campo.luz || campo.camaras || campo.minutero || campo.marcador_gol) && (
+                      <p className="mt-1 text-xs text-[#1A2E4A]/60">
+                        {[
+                          campo.luz ? "Luz" : null,
+                          campo.camaras ? "Cámaras" : null,
+                          campo.minutero ? "Minutero" : null,
+                          campo.marcador_gol ? "Marcador" : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </p>
-                      <p className="text-sm text-[#1A2E4A]/70">
-                        Precio/hora: ${Number(campo.valor_hora ?? 0).toLocaleString("es-AR")} · Reserva: ${Number(campo.valor_reserva ?? 0).toLocaleString("es-AR")}
-                      </p>
-                      {(campo.luz || campo.camaras || campo.minutero || campo.marcador_gol) && (
-                        <p className="mt-1 text-xs text-[#1A2E4A]/60">
-                          {[
-                            campo.luz ? "Luz" : null,
-                            campo.camaras ? "Cámaras" : null,
-                            campo.minutero ? "Minutero" : null,
-                            campo.marcador_gol ? "Marcador" : null,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </p>
-                      )}
-                    </div>
+                    )}
+                    <Link
+                      href={`/dashboard/canchas/${cancha.id}/campos/${campo.id}/editar`}
+                      className="mt-2 inline-block text-sm font-medium text-[var(--fulbito-green)] hover:underline"
+                    >
+                      Editar precio, seña y política
+                    </Link>
                   </div>
                 </li>
               ))}

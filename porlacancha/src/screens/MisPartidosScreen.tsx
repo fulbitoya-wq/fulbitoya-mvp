@@ -11,7 +11,13 @@ import {
   puedeEditarConvocados,
   type MiPartido,
 } from "../lib/mis-partidos";
-import { Button, Chip, DesafioCard, EmptyState, FilterChip, Heading, Kicker, Mute, Screen, showConfirm, showNotice } from "../ui";
+import {
+  cancelarReservaMia,
+  etiquetaEstadoReserva,
+  listarMisReservas,
+  pesosReserva,
+  type ReservaMia,
+} from "../lib/reserva";
 import { typeStyle } from "../ui/textStyle";
 
 const fondoAzul2 = require("../../assets/fondo-azul-2.jpeg");
@@ -34,25 +40,28 @@ function rolLabel(p: MiPartido): string {
 export function MisPartidosScreen({ guest, onRequestAuth, onOpenDesafio, onEditarConvocados }: Props) {
   const [tab, setTab] = useState<Tab>("proximos");
   const [items, setItems] = useState<MiPartido[]>([]);
+  const [reservas, setReservas] = useState<ReservaMia[]>([]);
   const [loading, setLoading] = useState(!guest);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (guest) {
       setItems([]);
+      setReservas([]);
       setLoading(false);
       setError(null);
       return;
     }
     setLoading(true);
-    const res = await listMisPartidos();
-    if (!res.ok) {
-      setError(res.error);
+    const [partidos, mine] = await Promise.all([listMisPartidos(), listarMisReservas()]);
+    if (!partidos.ok) {
+      setError(partidos.error);
       setItems([]);
     } else {
       setError(null);
-      setItems(res.items);
+      setItems(partidos.items);
     }
+    setReservas(mine.data);
     setLoading(false);
   }, [guest]);
 
@@ -119,7 +128,51 @@ export function MisPartidosScreen({ guest, onRequestAuth, onOpenDesafio, onEdita
         refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} tintColor={colors.gold} />}
       >
         {error ? <Mute>{error}</Mute> : null}
-        {!loading && shown.length === 0 ? (
+        {tab === "proximos" && reservas.filter((r) => r.estado === "reservada").length > 0 ? (
+          <View style={{ gap: space[8] }}>
+            <Text style={styles.sub}>Reservas</Text>
+            {reservas
+              .filter((r) => r.estado === "reservada")
+              .map((r) => (
+                <View key={r.id} style={styles.block}>
+                  <Chip label={etiquetaEstadoReserva(r.estado)} tone="open" />
+                  <Text style={styles.resT}>
+                    {r.cancha_nombre} · {r.campo_nombre}
+                  </Text>
+                  <Mute>
+                    {r.fecha} · {r.hora_inicio.slice(0, 5)}
+                    {r.canal === "whatsapp"
+                      ? " · por WhatsApp · se paga en el predio"
+                      : ` · ${pesosReserva(r.monto_total)}${r.tipo_cobro === "total" ? " · total" : " · seña"}`}
+                  </Mute>
+                  <Pressable
+                    onPress={() => {
+                      showConfirm({
+                        title: "Cancelar reserva",
+                        body: "Se aplica la regla de cancelación del predio (congelada al pagar).",
+                        cancelLabel: "Volver",
+                        confirmLabel: "Cancelar reserva",
+                        danger: true,
+                        onConfirm: () => {
+                          void cancelarReservaMia(r.id).then((res) => {
+                            if (!res.ok) {
+                              showNotice("No se pudo cancelar", res.error);
+                              return;
+                            }
+                            void load();
+                          });
+                        },
+                      });
+                    }}
+                    style={styles.linkHit}
+                  >
+                    <Text style={styles.danger}>Cancelar reserva</Text>
+                  </Pressable>
+                </View>
+              ))}
+          </View>
+        ) : null}
+        {!loading && shown.length === 0 && reservas.filter((r) => r.estado === "reservada").length === 0 ? (
           <EmptyState
             title={tab === "proximos" ? "No tenés partidos próximos" : "Todavía no hay historial"}
             body={
@@ -177,4 +230,6 @@ const styles = StyleSheet.create({
   linkHit: { minHeight: 44, justifyContent: "center" },
   link: typeStyle("bodySmall", colors.gold),
   danger: typeStyle("bodySmall", colors.danger),
+  sub: { ...typeStyle("h3", colors.white), marginBottom: space[8] },
+  resT: typeStyle("body", colors.white),
 });

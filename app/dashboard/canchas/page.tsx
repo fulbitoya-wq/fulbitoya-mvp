@@ -33,10 +33,10 @@ export default function DashboardCanchasPage() {
   return (
     <div className="p-8">
       <h1 className="font-subheading text-2xl font-semibold text-[#1A2E4A]">
-        Mis canchas
+        Mis predios
       </h1>
       <p className="mt-1 text-[#1A2E4A]/70">
-        Listado, nueva cancha, editar — en construcción.
+        Cada predio (complejo) y sus canchas. Los jugadores los ven en PorLaCancha cuando hay horarios libres.
       </p>
 
       <div className="mt-6">
@@ -44,7 +44,7 @@ export default function DashboardCanchasPage() {
           href="/dashboard/canchas/crear"
           className="inline-flex rounded-lg bg-[var(--fulbito-green)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[var(--fulbito-green-hover)]"
         >
-          Crear cancha
+          Cargar predio
         </a>
       </div>
 
@@ -73,6 +73,12 @@ export default function DashboardCanchasPage() {
                       className="rounded-lg border border-[#E0E0E0] px-3 py-2 text-sm font-medium text-[#1A2E4A] transition hover:bg-[#F5F5F5]"
                     >
                       Editar
+                    </Link>
+                    <Link
+                      href={`/dashboard/canchas/${c.id}/editar#politica`}
+                      className="rounded-lg border border-[#E0E0E0] px-3 py-2 text-sm font-medium text-[#1A2E4A] transition hover:bg-[#F5F5F5]"
+                    >
+                      Política
                     </Link>
                     <Link
                       href={`/dashboard/canchas/${c.id}/campos`}

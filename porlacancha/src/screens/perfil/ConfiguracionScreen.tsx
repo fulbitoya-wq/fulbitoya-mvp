@@ -21,6 +21,7 @@ import {
 } from "../../lib/icons";
 import type { FootballProfile } from "../../lib/perfil";
 import { listUsuariosBloqueados, desbloquearUsuario, type BloqueadoItem } from "../../lib/moderacion";
+import { RelojSimulacionCard } from "./RelojSimulacionCard";
 import {
   NOTIF_LABELS,
   NOTIF_TIPOS,
@@ -216,8 +217,9 @@ export function ConfiguracionScreen({ profile, football, email, onBack, onEdit, 
                 label="Métodos de pago"
                 disabled
                 icon={<CreditCard color={colors.sky} size={18} strokeWidth={iconStroke} />}
-                trailing={<Chip label="Próximamente" tone="pending" />}
+                trailing={<Chip label="Prueba" tone="pending" />}
               />
+              <RelojSimulacionCard />
               <Row
                 label="Ayuda y soporte"
                 onPress={() => void Linking.openURL(SOPORTE)}

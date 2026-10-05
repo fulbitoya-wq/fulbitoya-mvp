@@ -11,6 +11,7 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 import * as Linking from "expo-linking";
 import { handleAuthCallbackUrl } from "../lib/auth-deep-link";
+import { rememberClaimTokenFromUrl } from "../lib/claim-token";
 import { rememberJoinTokenFromUrl } from "../lib/join-token";
 import { supabase } from "../lib/supabase";
 
@@ -108,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const boot = async () => {
       const initial = await Linking.getInitialURL();
       await rememberJoinTokenFromUrl(initial);
+      await rememberClaimTokenFromUrl(initial);
       await handleAuthCallbackUrl(initial);
       const {
         data: { session: current },
@@ -141,6 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const linkSub = Linking.addEventListener("url", ({ url }) => {
       rememberJoinTokenFromUrl(url);
+      rememberClaimTokenFromUrl(url);
       handleAuthCallbackUrl(url);
     });
 

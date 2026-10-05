@@ -9,22 +9,38 @@ import { supabase } from "./supabase";
 export type InscripcionMia = {
   id: string;
   desafioId: string;
-  equipoId: string;
+  equipoId: string | null;
   estado: string;
   convocados: string[];
 };
 
-export async function getInscripcionMia(desafioId: string, equipoIds: string[]): Promise<InscripcionMia | null> {
-  if (equipoIds.length === 0) return null;
-  const { data, error } = await supabase
-    .from("desafio_inscripciones")
-    .select("id, desafio_id, equipo_id, estado")
-    .eq("desafio_id", desafioId)
-    .in("equipo_id", equipoIds)
-    .in("estado", ["confirmada", "pendiente_pago"])
-    .limit(1);
-  const row = Array.isArray(data) ? data[0] : data;
-  if (error || !row) return null;
+export async function getInscripcionMia(
+  desafioId: string,
+  equipoIds: string[],
+  userId?: string | null
+): Promise<InscripcionMia | null> {
+  let row: { id: string; desafio_id: string; equipo_id: string | null; estado: string } | null = null;
+  if (equipoIds.length > 0) {
+    const { data, error } = await supabase
+      .from("desafio_inscripciones")
+      .select("id, desafio_id, equipo_id, estado")
+      .eq("desafio_id", desafioId)
+      .in("equipo_id", equipoIds)
+      .in("estado", ["confirmada", "pendiente_pago"])
+      .limit(1);
+    if (!error) row = (Array.isArray(data) ? data[0] : data) ?? null;
+  }
+  if (!row && userId) {
+    const { data, error } = await supabase
+      .from("desafio_inscripciones")
+      .select("id, desafio_id, equipo_id, estado")
+      .eq("desafio_id", desafioId)
+      .eq("capitan_id", userId)
+      .in("estado", ["confirmada", "pendiente_pago"])
+      .limit(1);
+    if (!error) row = (Array.isArray(data) ? data[0] : data) ?? null;
+  }
+  if (!row) return null;
   const { data: conv } = await supabase
     .from("desafio_convocados")
     .select("usuario_id")

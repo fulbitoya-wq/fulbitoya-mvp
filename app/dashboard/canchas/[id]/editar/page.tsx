@@ -11,6 +11,8 @@ import {
 import { supabase } from "@/lib/supabase";
 import { PlacesAutocompleteInput } from "@/components/maps/PlacesAutocompleteInput";
 import { AddressPreviewMap } from "@/components/maps/AddressPreviewMap";
+import { PoliticaReservasForm, type PoliticaReservasFormHandle } from "@/components/dashboard/PoliticaReservasForm";
+import { validarPrecioYSena } from "@/lib/politica";
 
 const BUCKET_LOGOS = "predio-logos";
 const BUCKET_FONDOS = "predio-fondos";
@@ -40,6 +42,9 @@ export default function EditarCanchaPage() {
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const fondoInputRef = useRef<HTMLInputElement>(null);
+  const politicaRef = useRef<PoliticaReservasFormHandle>(null);
+  const [valorHora, setValorHora] = useState("");
+  const [valorReserva, setValorReserva] = useState("");
 
   useEffect(() => {
     const load = async () => {
@@ -63,6 +68,8 @@ export default function EditarCanchaPage() {
       setPlaceId(row.place_id ?? null);
       setLogoPreview(row.logo_url ?? null);
       setFondoPreview(row.fondo_url ?? null);
+      setValorHora(row.valor_hora != null && Number(row.valor_hora) > 0 ? String(row.valor_hora) : "");
+      setValorReserva(row.valor_reserva != null && Number(row.valor_reserva) > 0 ? String(row.valor_reserva) : "");
       setLoading(false);
     };
 
@@ -123,6 +130,15 @@ export default function EditarCanchaPage() {
       return;
     }
 
+    const precioNum = Number(valorHora);
+    const senaNum = Number(valorReserva);
+    const montoErr = validarPrecioYSena(precioNum, senaNum);
+    if (montoErr) {
+      setSaving(false);
+      setError(montoErr);
+      return;
+    }
+
     let nextLogoUrl: string | null | undefined = cancha.logo_url ?? null;
     let nextFondoUrl: string | null | undefined = cancha.fondo_url ?? null;
 
@@ -163,11 +179,20 @@ export default function EditarCanchaPage() {
       place_id: placeId,
       logo_url: nextLogoUrl ?? null,
       fondo_url: nextFondoUrl ?? null,
+      valor_hora: precioNum,
+      valor_reserva: senaNum,
     });
 
-    setSaving(false);
     if (!ok) {
+      setSaving(false);
       setError(updErr ?? "No se pudo actualizar.");
+      return;
+    }
+
+    const pol = await politicaRef.current?.save(canchaId, null);
+    setSaving(false);
+    if (pol && !pol.ok) {
+      setError(pol.error ?? "Se actualizó el predio, pero no la política.");
       return;
     }
 
@@ -286,6 +311,41 @@ export default function EditarCanchaPage() {
             </div>
           )}
         </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium text-[#1A2E4A]">Precio de la cancha (ARS) *</label>
+            <input
+              type="number"
+              min={1}
+              required
+              value={valorHora}
+              onChange={(e) => setValorHora(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[#E0E0E0] px-4 py-2"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[#1A2E4A]">Seña base (ARS) *</label>
+            <input
+              type="number"
+              min={1}
+              required
+              value={valorReserva}
+              onChange={(e) => setValorReserva(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[#E0E0E0] px-4 py-2"
+            />
+          </div>
+        </div>
+
+        {canchaId && (
+          <PoliticaReservasForm
+            ref={politicaRef}
+            canchaId={canchaId}
+            valorHora={valorHora}
+            valorReserva={valorReserva}
+            showSaveButton={false}
+          />
+        )}
 
         <div className="flex gap-3">
           <button

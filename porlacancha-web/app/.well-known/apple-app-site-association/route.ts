@@ -12,7 +12,7 @@ export function GET() {
       details: [
         {
           appID: `${team}.${bundle}`,
-          paths: ["/e/*", "/d/*", "/auth/*"],
+          paths: ["/e/*", "/d/*", "/r/*", "/p/*", "/auth/*"],
         },
       ],
     },

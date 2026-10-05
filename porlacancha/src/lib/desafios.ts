@@ -15,6 +15,7 @@ export type Desafio = {
   estado: string;
   cancha_id: string | null;
   barrio: string | null;
+  modalidad?: string | null;
   inscritos: { id: string; nombre: string; escudo_url: string | null }[];
   cupos: number;
   inscripcionId?: string | null;
@@ -48,7 +49,7 @@ export async function getDesafiosPublicos(): Promise<{
   const { data, error } = await supabase
     .from("desafios")
     .select(
-      "id, titulo, tipo, premio, direccion, barrio, lat, lng, fecha, hora_inicio, duracion_min, descripcion, estado, cancha_id"
+      "id, titulo, tipo, premio, direccion, barrio, lat, lng, fecha, hora_inicio, duracion_min, descripcion, estado, cancha_id, modalidad"
     )
     .in("estado", ["abierto", "completo"])
     .gte("fecha", today)
@@ -107,8 +108,9 @@ export function esSoloCancha(premio: number): boolean {
   return Number(premio) <= 0;
 }
 
-export function etiquetaModalidad(premio: number): string {
-  return esSoloCancha(premio) ? "Solo por la cancha" : "Por la cancha y";
+export function etiquetaModalidad(premio: number, modalidad?: string | null): string {
+  if (modalidad === "amistoso") return "Amistoso";
+  return esSoloCancha(premio) ? "Solo por la cancha" : "Por la cancha";
 }
 
 export function etiquetaTipo(tipo: string): string {
@@ -173,6 +175,22 @@ export function formatDiaSemana(isoDate: string): string {
 export function formatPremioCorto(value: number): string {
   if (value >= 1000) return `$${Math.round(value / 1000)}K`;
   return formatPremio(value);
+}
+
+export async function getDesafioPorId(id: string): Promise<Desafio | null> {
+  const { data, error } = await getDesafiosPublicos();
+  if (error) return null;
+  const found = data.find((d) => d.id === id);
+  if (found) return found;
+  const { data: row } = await supabase
+    .from("desafios")
+    .select(
+      "id, titulo, tipo, premio, direccion, barrio, lat, lng, fecha, hora_inicio, duracion_min, descripcion, estado, cancha_id, modalidad"
+    )
+    .eq("id", id)
+    .maybeSingle();
+  if (!row) return null;
+  return { ...(row as Omit<Desafio, "inscritos" | "cupos">), inscritos: [], cupos: CUPOS_DESAFIO };
 }
 
 export function etiquetaEmpiezaEn(fecha: string, hora: string): string | null {

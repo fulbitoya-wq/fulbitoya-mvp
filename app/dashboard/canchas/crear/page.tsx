@@ -8,6 +8,8 @@ import { getLocalidadesByPartido, getPartidosByProvincia, getProvincias, type Lo
 import { supabase } from "@/lib/supabase";
 import { PlacesAutocompleteInput } from "@/components/maps/PlacesAutocompleteInput";
 import { AddressPreviewMap } from "@/components/maps/AddressPreviewMap";
+import { PoliticaReservasForm, type PoliticaReservasFormHandle } from "@/components/dashboard/PoliticaReservasForm";
+import { validarPrecioYSena } from "@/lib/politica";
 
 const BUCKET_LOGOS = "predio-logos";
 const MAX_LOGO_FILE_MB = 2;
@@ -49,6 +51,9 @@ export default function CrearCanchaPage() {
   const [loadingUbicaciones, setLoadingUbicaciones] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [valorHora, setValorHora] = useState("");
+  const [valorReserva, setValorReserva] = useState("");
+  const politicaRef = useRef<PoliticaReservasFormHandle>(null);
 
   const onLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -122,6 +127,15 @@ export default function CrearCanchaPage() {
       return;
     }
 
+    const precioNum = Number(valorHora);
+    const senaNum = Number(valorReserva);
+    const montoErr = validarPrecioYSena(precioNum, senaNum);
+    if (montoErr) {
+      setError(montoErr);
+      setLoading(false);
+      return;
+    }
+
     let logoUrl: string | null = null;
     if (logoFile) {
       const path = `${user.id}/${Date.now()}_${logoFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
@@ -172,19 +186,31 @@ export default function CrearCanchaPage() {
       lat,
       lng,
       place_id: placeId,
+      valor_hora: precioNum,
+      valor_reserva: senaNum,
     });
 
-    setLoading(false);
     if (err) {
+      setLoading(false);
       setError(err);
       return;
     }
 
+    if (data?.id) {
+      const pol = await politicaRef.current?.save(data.id, null);
+      if (pol && !pol.ok) {
+        setLoading(false);
+        setError(pol.error ?? "El predio se creó, pero no se pudo guardar la política.");
+        return;
+      }
+    }
+
+    setLoading(false);
     router.push("/dashboard/canchas");
   };
 
   return (
-    <div className="mx-auto max-w-xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
       <Link href="/dashboard/canchas" className="text-sm font-medium text-[#1A2E4A]/70 hover:underline">
         ← Volver a mis canchas
       </Link>
@@ -423,6 +449,50 @@ export default function CrearCanchaPage() {
             </div>
           </div>
         </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label htmlFor="valor_hora" className="block text-sm font-medium text-[#1A2E4A]">
+              Precio de la cancha (ARS) *
+            </label>
+            <input
+              id="valor_hora"
+              type="number"
+              min={1}
+              step="1"
+              required
+              value={valorHora}
+              onChange={(e) => setValorHora(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[#E0E0E0] px-4 py-2 focus:border-[var(--fulbito-green)] focus:outline-none focus:ring-1 focus:ring-[var(--fulbito-green)]"
+              placeholder="Ej. 40000"
+            />
+          </div>
+          <div>
+            <label htmlFor="valor_reserva" className="block text-sm font-medium text-[#1A2E4A]">
+              Seña base (ARS) *
+            </label>
+            <input
+              id="valor_reserva"
+              type="number"
+              min={1}
+              step="1"
+              required
+              value={valorReserva}
+              onChange={(e) => setValorReserva(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[#E0E0E0] px-4 py-2 focus:border-[var(--fulbito-green)] focus:outline-none focus:ring-1 focus:ring-[var(--fulbito-green)]"
+              placeholder="Ej. 12000"
+            />
+            <p className="mt-1 text-xs text-[#1A2E4A]/60">Máximo: 50% del precio de la cancha.</p>
+          </div>
+        </div>
+
+        <PoliticaReservasForm
+          ref={politicaRef}
+          canchaId={null}
+          valorHora={valorHora}
+          valorReserva={valorReserva}
+          showSaveButton={false}
+        />
 
         <div className="flex gap-3 pt-2">
           <button

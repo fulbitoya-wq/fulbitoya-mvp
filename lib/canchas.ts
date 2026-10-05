@@ -20,6 +20,8 @@ export interface Cancha {
   lat: number | null;
   lng: number | null;
   place_id: string | null;
+  valor_hora: number | null;
+  valor_reserva: number | null;
   created_at: string;
 }
 
@@ -40,6 +42,8 @@ export interface CrearCanchaInput {
   lat?: number | null;
   lng?: number | null;
   place_id?: string | null;
+  valor_hora?: number | null;
+  valor_reserva?: number | null;
 }
 
 export async function crearCancha(input: CrearCanchaInput): Promise<{ data: { id: string } | null; error: string | null }> {
@@ -67,6 +71,8 @@ export async function crearCancha(input: CrearCanchaInput): Promise<{ data: { id
       lat: input.lat ?? null,
       lng: input.lng ?? null,
       place_id: input.place_id ?? null,
+      valor_hora: input.valor_hora ?? 0,
+      valor_reserva: input.valor_reserva ?? 0,
       activa: true,
     })
     .select("id")
@@ -97,6 +103,8 @@ export interface ActualizarCanchaInput {
   lat?: number | null;
   lng?: number | null;
   place_id?: string | null;
+  valor_hora?: number | null;
+  valor_reserva?: number | null;
 }
 
 export async function getCanchaDelOwnerById(canchaId: string): Promise<Cancha | null> {
@@ -137,6 +145,8 @@ export async function actualizarCanchaDelOwner(
   if (input.lat !== undefined) payload.lat = input.lat;
   if (input.lng !== undefined) payload.lng = input.lng;
   if (input.place_id !== undefined) payload.place_id = input.place_id;
+  if (input.valor_hora !== undefined) payload.valor_hora = input.valor_hora;
+  if (input.valor_reserva !== undefined) payload.valor_reserva = input.valor_reserva;
 
   const { error } = await supabase
     .from("canchas")

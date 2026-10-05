@@ -4,6 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { getCanchasDelOwner, type Cancha } from "@/lib/canchas";
 import { getCamposByCancha, type Campo } from "@/lib/campos";
+import {
+  enlacePredioWeb,
+  enlaceReclamoWeb,
+  mensajeErrorEquipo,
+  mensajeWhatsappReserva,
+  rpcAgendaReservasDia,
+  rpcCargarReservaManual,
+  rpcCrearEnlacePago,
+  rpcSlugDeCancha,
+} from "@shared/equipos";
 
 type Disponibilidad = {
   id: string;
@@ -14,6 +24,26 @@ type Disponibilidad = {
   precio: number;
   estado: "disponible" | "reservado" | "bloqueado";
 };
+
+type AgendaReserva = {
+  disponibilidad_id: string;
+  reserva_id: string;
+  titular_nombre: string;
+  titular_telefono: string;
+  canal: string | null;
+  cobro_externo: string | null;
+};
+
+type AgendaEnlace = {
+  disponibilidad_id: string;
+  token: string;
+  titular_nombre: string;
+  titular_telefono: string;
+  monto_sena: number;
+  mensaje: string;
+};
+
+const PLC_WEB = (process.env.NEXT_PUBLIC_PLC_SITE_URL ?? "https://porlacancha.com").replace(/\/$/, "");
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -55,6 +85,16 @@ export default function DashboardDisponibilidadesPage() {
   const [canchas, setCanchas] = useState<Cancha[]>([]);
   const [campos, setCampos] = useState<Campo[]>([]);
   const [disponibilidades, setDisponibilidades] = useState<Disponibilidad[]>([]);
+  const [agenda, setAgenda] = useState<Record<string, AgendaReserva>>({});
+  const [enlaces, setEnlaces] = useState<Record<string, AgendaEnlace[]>>({});
+  const [cargarId, setCargarId] = useState<string | null>(null);
+  const [formModo, setFormModo] = useState<"pago" | "manual">("pago");
+  const [cargarNombre, setCargarNombre] = useState("");
+  const [cargarTel, setCargarTel] = useState("");
+  const [cargarSena, setCargarSena] = useState("");
+  const [cargarMsg, setCargarMsg] = useState("");
+  const [cobroExterno, setCobroExterno] = useState<"sena_fuera" | "a_cobrar_predio">("sena_fuera");
+  const [predioSlug, setPredioSlug] = useState<string | null>(null);
 
   const [canchaId, setCanchaId] = useState<string>("");
   const [campoId, setCampoId] = useState<string>("");
@@ -97,10 +137,47 @@ export default function DashboardDisponibilidadesPage() {
     if (dispErr) {
       setError(dispErr.message);
       setDisponibilidades([]);
+      setAgenda({});
       return;
     }
 
     setDisponibilidades((data ?? []) as Disponibilidad[]);
+
+    const res = await rpcAgendaReservasDia(supabase, selectedCampoId, selectedFecha);
+    if (!res.ok) {
+      setAgenda({});
+      return;
+    }
+    const map: Record<string, AgendaReserva> = {};
+    for (const raw of res.reservas) {
+      const id = String(raw.disponibilidad_id ?? "");
+      if (!id) continue;
+      map[id] = {
+        disponibilidad_id: id,
+        reserva_id: String(raw.reserva_id ?? ""),
+        titular_nombre: String(raw.titular_nombre ?? ""),
+        titular_telefono: String(raw.titular_telefono ?? ""),
+        canal: raw.canal == null ? null : String(raw.canal),
+        cobro_externo: raw.cobro_externo == null ? null : String(raw.cobro_externo),
+      };
+    }
+    setAgenda(map);
+    const emap: Record<string, AgendaEnlace[]> = {};
+    const rawEnlaces = res.enlaces;
+    for (const raw of rawEnlaces as Record<string, unknown>[]) {
+      const id = String(raw.disponibilidad_id ?? "");
+      if (!id) continue;
+      const row: AgendaEnlace = {
+        disponibilidad_id: id,
+        token: String(raw.token ?? ""),
+        titular_nombre: String(raw.titular_nombre ?? ""),
+        titular_telefono: String(raw.titular_telefono ?? ""),
+        monto_sena: Number(raw.monto_sena ?? 0),
+        mensaje: String(raw.mensaje ?? ""),
+      };
+      emap[id] = [...(emap[id] ?? []), row];
+    }
+    setEnlaces(emap);
   };
 
   useEffect(() => {
@@ -123,6 +200,8 @@ export default function DashboardDisponibilidadesPage() {
       if (ownerCanchas.length > 0) {
         const firstCanchaId = ownerCanchas[0].id;
         setCanchaId(firstCanchaId);
+        const slugRes = await rpcSlugDeCancha(supabase, firstCanchaId);
+        setPredioSlug(slugRes.ok ? slugRes.slug ?? null : null);
 
         const fields = await getCamposByCancha(firstCanchaId);
         setCampos(fields);
@@ -146,11 +225,15 @@ export default function DashboardDisponibilidadesPage() {
     setCampoId("");
     setDisponibilidades([]);
     setError(null);
+    setPredioSlug(null);
 
     if (!nextCanchaId) {
       setCampos([]);
       return;
     }
+
+    const slugRes = await rpcSlugDeCancha(supabase, nextCanchaId);
+    setPredioSlug(slugRes.ok ? slugRes.slug ?? null : null);
 
     const fields = await getCamposByCancha(nextCanchaId);
     setCampos(fields);
@@ -307,14 +390,96 @@ export default function DashboardDisponibilidadesPage() {
     await loadDisponibilidades(campoId, fecha);
   };
 
+  const whatsappHref = (e: AgendaEnlace, d: Disponibilidad) => {
+    const link = enlaceReclamoWeb(PLC_WEB, e.token);
+    const text =
+      e.mensaje.trim() ||
+      mensajeWhatsappReserva({
+        nombre: e.titular_nombre,
+        fecha,
+        hora: formatTime(d.hora_inicio),
+        predio: canchas.find((c) => c.id === canchaId)?.nombre ?? "el predio",
+        link,
+        sena: e.monto_sena,
+      });
+    const tel = e.titular_telefono.replace(/\D/g, "");
+    return `https://wa.me/${tel}?text=${encodeURIComponent(text)}`;
+  };
+
+  const senaDefault = () => {
+    const n = Number(selectedCampo?.valor_reserva ?? canchas.find((c) => c.id === canchaId)?.valor_reserva ?? 0);
+    return Number.isFinite(n) && n > 0 ? String(n) : "";
+  };
+
+  const abrirFormPago = (id: string) => {
+    setCargarId(id);
+    setFormModo("pago");
+    setCargarNombre("");
+    setCargarTel("");
+    setCargarSena(senaDefault());
+    const predio = canchas.find((c) => c.id === canchaId)?.nombre ?? "el predio";
+    const slot = disponibilidades.find((x) => x.id === id);
+    setCargarMsg(
+      mensajeWhatsappReserva({
+        nombre: "[nombre]",
+        fecha,
+        hora: slot ? formatTime(slot.hora_inicio) : "",
+        predio,
+        link: "[enlace]",
+        sena: Number(senaDefault() || 0),
+      })
+    );
+  };
+
+  const crearEnlace = async (disponibilidadId: string) => {
+    setSaving(true);
+    setError(null);
+    const msg = cargarMsg.replaceAll("[nombre]", cargarNombre);
+    const res = await rpcCrearEnlacePago(supabase, {
+      disponibilidadId,
+      nombre: cargarNombre,
+      telefono: cargarTel,
+      montoSena: Number(cargarSena),
+      mensaje: msg,
+    });
+    setSaving(false);
+    if (!res.ok) {
+      setError(mensajeErrorEquipo(res.error));
+      return;
+    }
+    setCargarId(null);
+    await loadDisponibilidades(campoId, fecha);
+  };
+
+  const cargarManual = async (disponibilidadId: string) => {
+    setSaving(true);
+    setError(null);
+    const res = await rpcCargarReservaManual(supabase, disponibilidadId, cargarNombre, cargarTel, cobroExterno);
+    setSaving(false);
+    if (!res.ok) {
+      setError(mensajeErrorEquipo(res.error));
+      return;
+    }
+    setCargarId(null);
+    await loadDisponibilidades(campoId, fecha);
+  };
+
   return (
     <div className="p-8">
       <h1 className="font-subheading text-2xl font-semibold text-[#1A2E4A]">
-        Gestionar horarios
+        Agenda
       </h1>
       <p className="mt-1 text-[#1A2E4A]/70">
-        Cargá turnos por campo para habilitar reservas.
+        Cargá turnos por campo. El enlace de WhatsApp no bloquea el horario hasta que paguen.
       </p>
+      {predioSlug ? (
+        <p className="mt-2 text-sm text-[#1A2E4A]/80">
+          Link general del predio:{" "}
+          <a className="font-medium underline" href={enlacePredioWeb(PLC_WEB, predioSlug)} target="_blank" rel="noreferrer">
+            {enlacePredioWeb(PLC_WEB, predioSlug)}
+          </a>
+        </p>
+      ) : null}
 
       {error && (
         <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -517,11 +682,15 @@ export default function DashboardDisponibilidadesPage() {
               <p className="mt-4 text-sm text-[#1A2E4A]/70">Sin horarios cargados.</p>
             ) : (
               <ul className="mt-4 space-y-2">
-                {disponibilidades.map((d) => (
+                {disponibilidades.map((d) => {
+                  const reserva = agenda[d.id];
+                  const links = enlaces[d.id] ?? [];
+                  return (
                   <li
                     key={d.id}
-                    className="flex flex-col gap-2 rounded-lg border border-[#E0E0E0] bg-[#F9F9F9] p-3 sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col gap-2 rounded-lg border border-[#E0E0E0] bg-[#F9F9F9] p-3"
                   >
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm font-medium text-[#1A2E4A]">
                         {formatTime(d.hora_inicio)} - {formatTime(d.hora_fin)}
@@ -529,9 +698,59 @@ export default function DashboardDisponibilidadesPage() {
                       <p className="text-xs text-[#1A2E4A]/70">
                         ${Number(d.precio ?? 0).toLocaleString("es-AR")} / hora · Estado:{" "}
                         <b>{d.estado}</b>
+                        {reserva ? (
+                          <>
+                            {" "}
+                            · {reserva.titular_nombre || "Reserva"}{" "}
+                            {reserva.cobro_externo === "sena_fuera"
+                              ? "(seña cobrada por fuera)"
+                              : reserva.cobro_externo === "a_cobrar_predio"
+                                ? "(a cobrar en el predio)"
+                                : reserva.canal === "whatsapp"
+                                  ? "(pagó el enlace)"
+                                  : ""}
+                          </>
+                        ) : null}
+                        {links.length > 0 && !reserva ? (
+                          <> · {links.length} enlace{links.length > 1 ? "s" : ""} de pago (el turno sigue libre)</>
+                        ) : null}
                       </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      {d.estado === "disponible" ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => abrirFormPago(d.id)}
+                            className="rounded-md bg-[var(--fulbito-green)] px-3 py-1.5 text-xs font-medium text-white"
+                          >
+                            Enlace de pago
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCargarId(d.id);
+                              setFormModo("manual");
+                              setCargarNombre("");
+                              setCargarTel("");
+                            }}
+                            className="rounded-md border border-[#1A2E4A] px-3 py-1.5 text-xs font-medium text-[#1A2E4A]"
+                          >
+                            Reserva manual
+                          </button>
+                        </>
+                      ) : null}
+                      {links.map((e) => (
+                        <a
+                          key={e.token}
+                          href={whatsappHref(e, d)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded-md border border-[#25D366] px-3 py-1.5 text-xs font-medium text-[#128C7E] hover:bg-[#E8FFF0]"
+                        >
+                          WhatsApp · {e.titular_nombre}
+                        </a>
+                      ))}
                       {d.estado !== "bloqueado" ? (
                         <button
                           type="button"
@@ -557,8 +776,95 @@ export default function DashboardDisponibilidadesPage() {
                         Eliminar
                       </button>
                     </div>
+                    </div>
+                    {cargarId === d.id && formModo === "pago" ? (
+                      <div className="grid gap-2">
+                        <div className="grid gap-2 sm:grid-cols-3">
+                          <input
+                            placeholder="Nombre"
+                            value={cargarNombre}
+                            onChange={(e) => setCargarNombre(e.target.value)}
+                            className="rounded-lg border border-[#E0E0E0] bg-white px-3 py-2 text-sm"
+                          />
+                          <input
+                            placeholder="Teléfono"
+                            value={cargarTel}
+                            onChange={(e) => setCargarTel(e.target.value)}
+                            className="rounded-lg border border-[#E0E0E0] bg-white px-3 py-2 text-sm"
+                          />
+                          <input
+                            placeholder="Seña"
+                            type="number"
+                            min={0}
+                            value={cargarSena}
+                            onChange={(e) => setCargarSena(e.target.value)}
+                            className="rounded-lg border border-[#E0E0E0] bg-white px-3 py-2 text-sm"
+                          />
+                        </div>
+                        <textarea
+                          value={cargarMsg}
+                          onChange={(e) => setCargarMsg(e.target.value)}
+                          rows={3}
+                          className="rounded-lg border border-[#E0E0E0] bg-white px-3 py-2 text-sm"
+                        />
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() => void crearEnlace(d.id)}
+                          className="rounded-lg bg-[#1A2E4A] px-3 py-2 text-sm font-medium text-white disabled:opacity-70"
+                        >
+                          {saving ? "Guardando..." : "Generar enlace (no bloquea el turno)"}
+                        </button>
+                      </div>
+                    ) : null}
+                    {cargarId === d.id && formModo === "manual" ? (
+                      <div className="grid gap-2">
+                        <p className="text-xs text-[#1A2E4A]/70">Nombre y teléfono son opcionales. Esto sí ocupa el horario.</p>
+                        <div className="flex flex-wrap gap-2 text-sm">
+                          <label className="flex items-center gap-1">
+                            <input
+                              type="radio"
+                              checked={cobroExterno === "sena_fuera"}
+                              onChange={() => setCobroExterno("sena_fuera")}
+                            />
+                            Seña cobrada por fuera
+                          </label>
+                          <label className="flex items-center gap-1">
+                            <input
+                              type="radio"
+                              checked={cobroExterno === "a_cobrar_predio"}
+                              onChange={() => setCobroExterno("a_cobrar_predio")}
+                            />
+                            A cobrar en el predio
+                          </label>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-3">
+                          <input
+                            placeholder="Nombre (opcional)"
+                            value={cargarNombre}
+                            onChange={(e) => setCargarNombre(e.target.value)}
+                            className="rounded-lg border border-[#E0E0E0] bg-white px-3 py-2 text-sm"
+                          />
+                          <input
+                            placeholder="Teléfono (opcional)"
+                            value={cargarTel}
+                            onChange={(e) => setCargarTel(e.target.value)}
+                            className="rounded-lg border border-[#E0E0E0] bg-white px-3 py-2 text-sm"
+                          />
+                          <button
+                            type="button"
+                            disabled={saving}
+                            onClick={() => void cargarManual(d.id)}
+                            className="rounded-lg bg-[#1A2E4A] px-3 py-2 text-sm font-medium text-white disabled:opacity-70"
+                          >
+                            {saving ? "Guardando..." : "Cargar en la agenda"}
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
           </div>

@@ -11,6 +11,8 @@ export const NOTIF_TIPOS = [
   "baja_convocatoria",
   "inscripcion_desafio",
   "inscripcion_cancelada",
+  "reserva_nueva_predio",
+  "turno_enlace_ocupado",
 ] as const;
 
 export type NotifTipo = (typeof NOTIF_TIPOS)[number];
@@ -26,9 +28,11 @@ export const NOTIF_LABELS: Record<NotifTipo, string> = {
   baja_convocatoria: "Te sacaron de una convocatoria",
   inscripcion_desafio: "Un equipo se inscribió a tu desafío",
   inscripcion_cancelada: "Se canceló una inscripción",
+  reserva_nueva_predio: "Reservas de tu predio",
+  turno_enlace_ocupado: "Enlaces de un horario ya tomado",
 };
 
-export type DestinoNotif = "inbox" | "equipo" | "equipos" | "desafio";
+export type DestinoNotif = "inbox" | "equipo" | "equipos" | "desafio" | "matches";
 
 export type Notificacion = {
   id: string;
@@ -53,7 +57,7 @@ type Row = {
 };
 
 function parseDestino(raw: string | undefined): DestinoNotif {
-  if (raw === "inbox" || raw === "equipo" || raw === "equipos" || raw === "desafio") return raw;
+  if (raw === "inbox" || raw === "equipo" || raw === "equipos" || raw === "desafio" || raw === "matches") return raw;
   return "equipos";
 }
 
