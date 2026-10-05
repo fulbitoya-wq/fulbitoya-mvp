@@ -85,7 +85,7 @@ export const EQUIPOS_RPC_ERRORS: Record<string, string> = {
   tipo_cobro_invalido: "Elegí seña o pago total.",
   reglas_no_aceptadas: "Tenés que aceptar las reglas del predio para reservar.",
   monto_invalido: "El monto del pago no coincide con la cotización.",
-  nombre_requerido: "Ingresá el nombre de quien reserva.",
+  titular_nombre_requerido: "Ingresá el nombre de quien reserva.",
   telefono_invalido: "Ingresá un teléfono válido.",
   ya_reclamada: "Esa reserva ya está asociada a otra cuenta.",
   codigo_invalido: "Ese código no es válido.",
