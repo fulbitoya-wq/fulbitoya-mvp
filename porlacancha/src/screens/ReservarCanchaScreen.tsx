@@ -22,15 +22,23 @@ type Props = {
   onBack: () => void;
   onRequestAuth: () => void;
   onDone: () => void;
+  initialCanchaId?: string | null;
+  initialTurnoId?: string | null;
 };
 
-export function ReservarCanchaScreen({ onBack, onRequestAuth, onDone }: Props) {
+export function ReservarCanchaScreen({
+  onBack,
+  onRequestAuth,
+  onDone,
+  initialCanchaId = null,
+  initialTurnoId = null,
+}: Props) {
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
   const [predios, setPredios] = useState<PredioPublico[]>([]);
-  const [canchaId, setCanchaId] = useState<string | null>(null);
+  const [canchaId, setCanchaId] = useState<string | null>(initialCanchaId);
   const [turnos, setTurnos] = useState<TurnoPublico[]>([]);
-  const [turnoId, setTurnoId] = useState<string | null>(null);
+  const [turnoId, setTurnoId] = useState<string | null>(initialTurnoId);
   const [tipo, setTipo] = useState<"sena" | "total">("sena");
   const [cot, setCot] = useState<CotizacionReserva | null>(null);
   const [acepto, setAcepto] = useState(false);
@@ -71,6 +79,16 @@ export function ReservarCanchaScreen({ onBack, onRequestAuth, onDone }: Props) {
 
   const fechas = useMemo(() => [...new Set(turnos.map((t) => t.fecha))], [turnos]);
   const [fecha, setFecha] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!initialTurnoId) return;
+    const t = turnos.find((x) => x.id === initialTurnoId);
+    if (t) {
+      setCanchaId(t.cancha_id);
+      setFecha(t.fecha);
+      setTurnoId(t.id);
+    }
+  }, [turnos, initialTurnoId]);
   const turnosDia = turnos.filter((t) => !fecha || t.fecha === fecha);
 
   const pagar = async () => {

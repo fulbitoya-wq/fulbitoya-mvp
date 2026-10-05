@@ -64,7 +64,10 @@ export function LoggedInShell({ onRequestAuth }: Props) {
         action.kind === "join_token" ||
         action.kind === "create_team" ||
         action.kind === "accept_invite" ||
-        action.kind === "inscribir";
+        action.kind === "inscribir" ||
+        action.kind === "reservar" ||
+        action.kind === "crear_partido" ||
+        action.kind === "lista_reserva";
       if (mustComplete && profileNeedsUsername(profile)) {
         setGate("username");
         return;

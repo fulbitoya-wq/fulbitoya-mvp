@@ -11,7 +11,10 @@ export type PendingAction =
   | { kind: "open_inbox" }
   | { kind: "accept_invite"; solicitudId: string }
   | { kind: "inscribir"; desafioId: string }
-  | { kind: "favorite"; jugadorId: string };
+  | { kind: "favorite"; jugadorId: string }
+  | { kind: "reservar"; canchaId?: string; turnoId?: string }
+  | { kind: "crear_partido" }
+  | { kind: "lista_reserva"; reservaId: string };
 
 export function profileNeedsUsername(_profile: JugateLaProfile | null): boolean {
   return false;

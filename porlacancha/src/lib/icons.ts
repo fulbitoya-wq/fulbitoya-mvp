@@ -7,6 +7,8 @@ export { default as Ban } from "lucide-react-native/dist/cjs/icons/ban.js";
 export { default as Bell } from "lucide-react-native/dist/cjs/icons/bell.js";
 export { default as Building2 } from "lucide-react-native/dist/cjs/icons/building.js";
 export { default as Calendar } from "lucide-react-native/dist/cjs/icons/calendar.js";
+export { default as CalendarDays } from "lucide-react-native/dist/cjs/icons/calendar-days.js";
+export { default as ChevronDown } from "lucide-react-native/dist/cjs/icons/chevron-down.js";
 export { default as Camera } from "lucide-react-native/dist/cjs/icons/camera.js";
 export { default as Check } from "lucide-react-native/dist/cjs/icons/check.js";
 export { default as ChevronLeft } from "lucide-react-native/dist/cjs/icons/chevron-left.js";
@@ -42,4 +44,5 @@ export { default as Trophy } from "lucide-react-native/dist/cjs/icons/trophy.js"
 export { default as User } from "lucide-react-native/dist/cjs/icons/user.js";
 export { default as UserRound } from "lucide-react-native/dist/cjs/icons/user-round.js";
 export { default as Users } from "lucide-react-native/dist/cjs/icons/users.js";
+export { default as UsersRound } from "lucide-react-native/dist/cjs/icons/users-round.js";
 export { default as X } from "lucide-react-native/dist/cjs/icons/x.js";

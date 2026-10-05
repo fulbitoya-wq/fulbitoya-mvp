@@ -15,6 +15,7 @@ export type Desafio = {
   estado: string;
   cancha_id: string | null;
   barrio: string | null;
+  predio_nombre?: string | null;
   modalidad?: string | null;
   inscritos: { id: string; nombre: string; escudo_url: string | null }[];
   cupos: number;

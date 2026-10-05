@@ -18,6 +18,19 @@ import {
   pesosReserva,
   type ReservaMia,
 } from "../lib/reserva";
+import {
+  Button,
+  Chip,
+  DesafioCard,
+  EmptyState,
+  FilterChip,
+  Heading,
+  Kicker,
+  Mute,
+  Screen,
+  showConfirm,
+  showNotice,
+} from "../ui";
 import { typeStyle } from "../ui/textStyle";
 
 const fondoAzul2 = require("../../assets/fondo-azul-2.jpeg");
