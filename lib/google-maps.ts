@@ -17,7 +17,9 @@ export function loadGoogleMaps(): Promise<typeof google> {
 
   const key = getGoogleMapsApiKey();
   if (!key) {
-    return Promise.reject(new Error("Falta NEXT_PUBLIC_GOOGLE_MAPS_API_KEY en .env.local."));
+    return Promise.reject(
+      new Error("Falta NEXT_PUBLIC_GOOGLE_MAPS_API_KEY en este deploy. Cargala en Vercel y volvé a buildear."),
+    );
   }
 
   const pending = (window as unknown as { __gmapsLoader?: Promise<typeof google> }).__gmapsLoader;
@@ -35,8 +37,17 @@ export function loadGoogleMaps(): Promise<typeof google> {
     script.id = SCRIPT_ID;
     script.async = true;
     script.defer = true;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&language=es&region=AR`;
-    script.onload = () => resolve(window.google);
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly&libraries=places&language=es&region=AR&loading=async`;
+    script.onload = () => {
+      const mapsNs = window.google?.maps as typeof google.maps & { importLibrary?: (name: string) => Promise<unknown> };
+      if (mapsNs.importLibrary) {
+        void Promise.all([mapsNs.importLibrary("maps"), mapsNs.importLibrary("places")])
+          .then(() => resolve(window.google))
+          .catch(() => reject(new Error("No se pudo cargar Google Maps.")));
+        return;
+      }
+      resolve(window.google);
+    };
     script.onerror = () => reject(new Error("No se pudo cargar Google Maps."));
     document.head.appendChild(script);
   });
