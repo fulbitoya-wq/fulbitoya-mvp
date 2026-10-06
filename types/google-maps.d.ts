@@ -6,9 +6,7 @@ declare global {
   }
 
   namespace google.maps {
-    function importLibrary(name: string): Promise<{
-      PlaceAutocompleteElement?: new (opts?: Record<string, unknown>) => HTMLElement;
-    }>;
+    function importLibrary(name: string, ...rest: unknown[]): Promise<unknown>;
     class Map {
       constructor(el: HTMLElement, opts?: Record<string, unknown>);
       fitBounds(bounds: LatLngBounds, padding?: number): void;

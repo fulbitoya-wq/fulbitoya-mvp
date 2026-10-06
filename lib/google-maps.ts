@@ -15,7 +15,7 @@ function mapsNs(): MapsBootstrap | undefined {
 }
 
 function installMapsBootstrap(key: string) {
-  const win = window as Window & { google?: { maps?: MapsBootstrap } };
+  const win = window as unknown as { google: { maps: MapsBootstrap } };
   win.google = win.google ?? { maps: {} as MapsBootstrap };
   win.google.maps = win.google.maps ?? ({} as MapsBootstrap);
   const d = win.google.maps;
