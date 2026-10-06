@@ -48,8 +48,8 @@ export function AddressPreviewMap({ lat, lng, draggable, onPinChange }: AddressP
           if (!pos) return;
           onPinChangeRef.current?.(pos.lat(), pos.lng());
         });
-        google.maps.event.addListener(mapRef.current, "click", (e: google.maps.MapMouseEvent) => {
-          if (!draggable || !e.latLng) return;
+        google.maps.event.addListener(mapRef.current, "click", (e?: google.maps.MapMouseEvent) => {
+          if (!draggable || !e?.latLng) return;
           markerRef.current?.setPosition(e.latLng);
           onPinChangeRef.current?.(e.latLng.lat(), e.latLng.lng());
         });
