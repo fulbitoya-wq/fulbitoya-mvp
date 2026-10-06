@@ -33,6 +33,18 @@ export async function getCamposByCancha(canchaId: string): Promise<Campo[]> {
   return (data ?? []) as Campo[];
 }
 
+export async function contarCamposPorCancha(canchaIds: string[]): Promise<Record<string, number>> {
+  const out: Record<string, number> = {};
+  if (!canchaIds.length) return out;
+  const { data, error } = await supabase.from("campos").select("id, cancha_id").in("cancha_id", canchaIds);
+  if (error) return out;
+  for (const row of data ?? []) {
+    const id = row.cancha_id as string;
+    out[id] = (out[id] ?? 0) + 1;
+  }
+  return out;
+}
+
 export interface CrearCampoInput {
   cancha_id: string;
   nombre: string;
