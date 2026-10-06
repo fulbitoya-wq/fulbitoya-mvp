@@ -11,14 +11,21 @@ declare global {
       fitBounds(bounds: LatLngBounds, padding?: number): void;
       panTo(latLng: LatLng | LatLngLiteral): void;
       setZoom(zoom: number): void;
+      addListener(event: string, handler: (e: MapMouseEvent) => void): void;
     }
-    class LatLngBounds {
-      extend(latLng: LatLng | LatLngLiteral): void;
-      isEmpty(): boolean;
+    interface MapMouseEvent {
+      latLng?: LatLng | null;
     }
     class Marker {
       constructor(opts?: Record<string, unknown>);
       setPosition(latLng: LatLng | LatLngLiteral): void;
+      getPosition(): LatLng | null;
+      setDraggable(draggable: boolean): void;
+      addListener(event: string, handler: () => void): void;
+    }
+    class LatLngBounds {
+      extend(latLng: LatLng | LatLngLiteral): void;
+      isEmpty(): boolean;
     }
     class OverlayView {
       setMap(map: Map | null): void;
@@ -55,6 +62,7 @@ declare global {
       }
     }
     namespace event {
+      function addListener(instance: unknown, event: string, handler: (e?: MapMouseEvent) => void): void;
       function clearInstanceListeners(instance: unknown): void;
     }
   }

@@ -43,12 +43,12 @@ export function AddressPreviewMap({ lat, lng, draggable, onPinChange }: AddressP
           position: center,
           draggable: Boolean(draggable),
         });
-        markerRef.current.addListener("dragend", () => {
+        google.maps.event.addListener(markerRef.current, "dragend", () => {
           const pos = markerRef.current?.getPosition();
           if (!pos) return;
           onPinChangeRef.current?.(pos.lat(), pos.lng());
         });
-        mapRef.current.addListener("click", (e: google.maps.MapMouseEvent) => {
+        google.maps.event.addListener(mapRef.current, "click", (e: google.maps.MapMouseEvent) => {
           if (!draggable || !e.latLng) return;
           markerRef.current?.setPosition(e.latLng);
           onPinChangeRef.current?.(e.latLng.lat(), e.latLng.lng());
