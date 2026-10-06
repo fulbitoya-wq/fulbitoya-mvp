@@ -12,6 +12,11 @@ export interface Campo {
   camaras: boolean | null;
   minutero: boolean | null;
   marcador_gol: boolean | null;
+  techada: boolean | null;
+  duracion_min: number | null;
+  sena_tipo: "fija" | "porcentaje" | null;
+  sena_valor: number | null;
+  fotos: string[] | null;
   observaciones: string | null;
   foto_url: string | null;
   created_at: string;
@@ -41,6 +46,11 @@ export interface CrearCampoInput {
   marcador_gol?: boolean | null;
   observaciones?: string | null;
   foto_url?: string | null;
+  techada?: boolean | null;
+  duracion_min?: number | null;
+  sena_tipo?: "fija" | "porcentaje" | null;
+  sena_valor?: number | null;
+  fotos?: string[] | null;
 }
 
 export async function crearCampo(input: CrearCampoInput): Promise<{ data: { id: string } | null; error: string | null }> {
@@ -59,6 +69,11 @@ export async function crearCampo(input: CrearCampoInput): Promise<{ data: { id: 
       marcador_gol: input.marcador_gol ?? null,
       observaciones: input.observaciones ?? null,
       foto_url: input.foto_url ?? null,
+      techada: input.techada ?? false,
+      duracion_min: input.duracion_min ?? 60,
+      sena_tipo: input.sena_tipo ?? "fija",
+      sena_valor: input.sena_valor ?? 0,
+      fotos: input.fotos ?? [],
     })
     .select("id")
     .single();
@@ -83,6 +98,11 @@ export async function actualizarCampo(
   if (input.marcador_gol !== undefined) payload.marcador_gol = input.marcador_gol;
   if (input.observaciones !== undefined) payload.observaciones = input.observaciones;
   if (input.foto_url !== undefined) payload.foto_url = input.foto_url;
+  if (input.techada !== undefined) payload.techada = input.techada;
+  if (input.duracion_min !== undefined) payload.duracion_min = input.duracion_min;
+  if (input.sena_tipo !== undefined) payload.sena_tipo = input.sena_tipo;
+  if (input.sena_valor !== undefined) payload.sena_valor = input.sena_valor;
+  if (input.fotos !== undefined) payload.fotos = input.fotos;
 
   const { error } = await supabase.from("campos").update(payload).eq("id", campoId);
   if (error) return { ok: false, error: error.message };
