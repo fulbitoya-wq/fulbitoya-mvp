@@ -56,6 +56,14 @@ export function AgendaBoard({
     return <p className="mt-6 text-sm text-[#1A2E4A]/70">Cargá una cancha en el predio para ver la grilla.</p>;
   }
 
+  if (horas.length === 0) {
+    return (
+      <p className="mt-6 rounded-xl border border-[#E0E0E0] bg-white px-4 py-6 text-sm text-[#1A2E4A]/70">
+        No hay turnos para este día. En Canchas, cada cancha necesita precio y el predio tiene que tener horarios de apertura. Después tocá Armar turnos.
+      </p>
+    );
+  }
+
   return (
     <>
       <div className="mt-4 hidden overflow-x-auto rounded-xl border border-[#E0E0E0] bg-white md:block">
