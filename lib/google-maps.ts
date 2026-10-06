@@ -1,18 +1,60 @@
 const SCRIPT_ID = "google-maps-js";
 
+type MapsBootstrap = {
+  importLibrary: (name: string, ...rest: unknown[]) => Promise<unknown>;
+  __ib__?: () => void;
+};
+
 export function getGoogleMapsApiKey(): string | null {
   const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim();
   return key ? key : null;
 }
 
+function mapsNs(): MapsBootstrap | undefined {
+  return window.google?.maps as unknown as MapsBootstrap | undefined;
+}
+
+function installMapsBootstrap(key: string) {
+  const win = window as Window & { google?: { maps?: MapsBootstrap } };
+  win.google = win.google ?? { maps: {} as MapsBootstrap };
+  win.google.maps = win.google.maps ?? ({} as MapsBootstrap);
+  const d = win.google.maps;
+  if (typeof d.importLibrary === "function") return;
+
+  let loading: Promise<void> | null = null;
+  const bootstrapImport = (name: string, ...rest: unknown[]) => {
+    if (!loading) {
+      loading = new Promise<void>((resolve, reject) => {
+        const params = new URLSearchParams({
+          key,
+          v: "weekly",
+          language: "es",
+          region: "AR",
+          loading: "async",
+          callback: "google.maps.__ib__",
+        });
+        d.__ib__ = () => resolve();
+        const script = document.createElement("script");
+        script.id = SCRIPT_ID;
+        script.async = true;
+        script.src = `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
+        script.onerror = () => reject(new Error("No se pudo cargar Google Maps."));
+        document.head.appendChild(script);
+      });
+    }
+    return loading.then(() => {
+      if (d.importLibrary === bootstrapImport) {
+        throw new Error("No se pudo cargar Google Maps.");
+      }
+      return d.importLibrary(name, ...rest);
+    });
+  };
+  d.importLibrary = bootstrapImport;
+}
+
 export function loadGoogleMaps(): Promise<typeof google> {
   if (typeof window === "undefined") {
     return Promise.reject(new Error("Google Maps solo corre en el navegador."));
-  }
-
-  const existing = window.google?.maps;
-  if (existing?.places && existing.Map) {
-    return Promise.resolve(window.google);
   }
 
   const key = getGoogleMapsApiKey();
@@ -25,35 +67,35 @@ export function loadGoogleMaps(): Promise<typeof google> {
   const pending = (window as unknown as { __gmapsLoader?: Promise<typeof google> }).__gmapsLoader;
   if (pending) return pending;
 
-  const loader = new Promise<typeof google>((resolve, reject) => {
-    const prev = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
-    if (prev) {
-      prev.addEventListener("load", () => resolve(window.google));
-      prev.addEventListener("error", () => reject(new Error("No se pudo cargar Google Maps.")));
-      return;
+  const loader = (async () => {
+    installMapsBootstrap(key);
+    const maps = mapsNs();
+    if (!maps?.importLibrary) {
+      throw new Error("No se pudo cargar Google Maps.");
     }
-
-    const script = document.createElement("script");
-    script.id = SCRIPT_ID;
-    script.async = true;
-    script.defer = true;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly&libraries=places&language=es&region=AR&loading=async`;
-    script.onload = () => {
-      const mapsNs = window.google?.maps as typeof google.maps & { importLibrary?: (name: string) => Promise<unknown> };
-      if (mapsNs.importLibrary) {
-        void Promise.all([mapsNs.importLibrary("maps"), mapsNs.importLibrary("places")])
-          .then(() => resolve(window.google))
-          .catch(() => reject(new Error("No se pudo cargar Google Maps.")));
-        return;
-      }
-      resolve(window.google);
-    };
-    script.onerror = () => reject(new Error("No se pudo cargar Google Maps."));
-    document.head.appendChild(script);
-  });
+    await maps.importLibrary("maps");
+    return window.google;
+  })();
 
   (window as unknown as { __gmapsLoader?: Promise<typeof google> }).__gmapsLoader = loader;
   return loader;
+}
+
+export async function loadGooglePlaces(): Promise<{
+  PlaceAutocompleteElement: new (opts?: Record<string, unknown>) => HTMLElement & { value?: string };
+}> {
+  await loadGoogleMaps();
+  const maps = mapsNs();
+  if (!maps?.importLibrary) {
+    throw new Error("No se pudo cargar Google Maps.");
+  }
+  const places = (await maps.importLibrary("places")) as {
+    PlaceAutocompleteElement?: new (opts?: Record<string, unknown>) => HTMLElement & { value?: string };
+  };
+  if (!places.PlaceAutocompleteElement) {
+    throw new Error("Falta Places API (New) en la key de Google.");
+  }
+  return { PlaceAutocompleteElement: places.PlaceAutocompleteElement };
 }
 
 export function formatPremioArs(value: number): string {

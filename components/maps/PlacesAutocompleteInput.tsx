@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { loadGoogleMaps } from "@/lib/google-maps";
+import { loadGooglePlaces } from "@/lib/google-maps";
 
 export interface PlaceSelection {
   formattedAddress: string;
@@ -56,19 +56,9 @@ export function PlacesAutocompleteInput({
 
     const setup = async () => {
       try {
-        await loadGoogleMaps();
-        const mapsNs = google.maps as typeof google.maps & {
-          importLibrary?: (name: string) => Promise<{ PlaceAutocompleteElement: new (opts?: Record<string, unknown>) => PlaceAutocompleteEl }>;
-        };
-        if (!mapsNs.importLibrary) {
-          throw new Error("Este navegador no carga Places API (New). Probá recargar.");
-        }
-        const places = await mapsNs.importLibrary("places");
+        const { PlaceAutocompleteElement } = await loadGooglePlaces();
         if (cancelled || !hostRef.current || widgetRef.current) return;
-        if (!places.PlaceAutocompleteElement) {
-          throw new Error("Falta Places API (New) en la key de Google.");
-        }
-        const el = new places.PlaceAutocompleteElement({
+        const el = new PlaceAutocompleteElement({
           includedRegionCodes: ["ar"],
           placeholder,
         });
@@ -87,12 +77,15 @@ export function PlacesAutocompleteInput({
             await place.fetchFields({ fields: ["formattedAddress", "location", "id", "addressComponents"] });
             const loc = place.location;
             if (!loc) return;
+            const lat = typeof loc.lat === "function" ? loc.lat() : loc.lat;
+            const lng = typeof loc.lng === "function" ? loc.lng() : loc.lng;
+            if (typeof lat !== "number" || typeof lng !== "number") return;
             const address = place.formattedAddress || el.value || "";
             onChangeRef.current(address);
             onPlaceSelectedRef.current({
               formattedAddress: address,
-              lat: loc.lat(),
-              lng: loc.lng(),
+              lat,
+              lng,
               placeId: place.id ?? null,
               barrio: barrioFromComponents(place.addressComponents),
             });
@@ -140,7 +133,7 @@ export function PlacesAutocompleteInput({
 
 type PlaceNew = {
   fetchFields: (opts: { fields: string[] }) => Promise<void>;
-  location?: { lat: () => number; lng: () => number } | null;
+  location?: { lat: (() => number) | number; lng: (() => number) | number } | null;
   formattedAddress?: string;
   id?: string;
   addressComponents?: AddressPiece[];
