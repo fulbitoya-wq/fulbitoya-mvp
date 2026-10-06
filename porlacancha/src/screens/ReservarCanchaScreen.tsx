@@ -16,6 +16,7 @@ import {
 } from "../lib/reserva";
 import { ChevronLeft, iconStroke } from "../lib/icons";
 import { Button, EmptyState, IconBtn, Mute, showNotice } from "../ui";
+import { PagoQrCard } from "../ui/PagoQrCard";
 import { typeStyle } from "../ui/textStyle";
 
 type Props = {
@@ -44,6 +45,7 @@ export function ReservarCanchaScreen({
   const [acepto, setAcepto] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loadErr, setLoadErr] = useState<string | null>(null);
+  const [qr, setQr] = useState<{ initPoint: string; holdId: string } | null>(null);
 
   useEffect(() => {
     void listarPrediosPublicos().then(({ data, error }) => {
@@ -104,7 +106,16 @@ export function ReservarCanchaScreen({
       showNotice("No se pudo reservar", res.error);
       return;
     }
-    showNotice("Reserva", res.reservaId ? "El turno quedó reservado." : "Te llevamos a Mercado Pago. El turno se confirma cuando se aprueba el pago.");
+    if ("reservaId" in res) {
+      showNotice("Reserva", "El turno quedó reservado.");
+      onDone();
+      return;
+    }
+    if (res.canal === "qr") {
+      setQr({ initPoint: res.initPoint, holdId: res.holdId });
+      return;
+    }
+    showNotice("Mercado Pago", "Te llevamos a pagar. El turno se confirma cuando se aprueba el pago.");
     onDone();
   };
 
@@ -175,12 +186,28 @@ export function ReservarCanchaScreen({
                   <View style={[styles.box, acepto && styles.boxOn]} />
                   <Text style={styles.body}>Acepto las reglas de cancelación y de seña.</Text>
                 </Pressable>
+                {qr && session?.access_token ? (
+                  <PagoQrCard
+                    initPoint={qr.initPoint}
+                    holdId={qr.holdId}
+                    accessToken={session.access_token}
+                    onConfirmada={() => {
+                      showNotice("Reserva", "El pago se confirmó. El turno quedó reservado.");
+                      onDone();
+                    }}
+                    onVencida={() => {
+                      setQr(null);
+                      showNotice("Pago", "Se venció el tiempo para pagar. El turno volvió a quedar libre.");
+                    }}
+                  />
+                ) : (
                 <Button
                   label={busy ? "Reservando..." : "Pagar y reservar"}
                   onPress={() => void pagar()}
                   disabled={!acepto || busy}
                   loading={busy}
                 />
+                )}
               </View>
             ) : null}
           </>

@@ -42,6 +42,12 @@ module.exports = {
     },
     web: {
       favicon: "./assets/favicon.png",
+      name: "PorLaCancha",
+      shortName: "PorLaCancha",
+      lang: "es",
+      themeColor: "#001B44",
+      backgroundColor: "#001B44",
+      display: "standalone",
     },
     plugins: [
       "expo-font",

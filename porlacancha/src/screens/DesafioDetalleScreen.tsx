@@ -1,6 +1,5 @@
-import { Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useEffect, useState } from "react";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, radius, space } from "@shared/design";
 import { useAuth } from "../auth/AuthProvider";
@@ -28,7 +27,9 @@ import {
   pesos,
 } from "../lib/plc";
 import { ChevronLeft, MapPin, Share2, iconStroke } from "../lib/icons";
+import { compartirTexto } from "../lib/share-text";
 import { Button, Chip, Mute, showConfirm, showNotice } from "../ui";
+import { CanchaMap } from "../ui/maps/CanchaMap";
 import { EquipoCupos } from "../ui/EquipoCupos";
 import { PitchCover } from "../ui/PitchCover";
 import { typeStyle } from "../ui/textStyle";
@@ -117,9 +118,7 @@ export function DesafioDetalleScreen({
   );
 
   const compartir = () => {
-    void Share.share({
-      message: `${desafio.titulo} · ${etiquetaModalidad(Number(desafio.premio), desafio.modalidad)}`,
-    });
+    void compartirTexto(`${desafio.titulo} · ${etiquetaModalidad(Number(desafio.premio), desafio.modalidad)}`);
   };
 
   const pagar = async () => {
@@ -239,19 +238,17 @@ export function DesafioDetalleScreen({
               <Button label="Ver en mapa" variant="secondary" onPress={onOpenMap} />
             </View>
             {Number.isFinite(lat) && Number.isFinite(lng) ? (
-              <MapView
+              <CanchaMap
                 style={styles.miniMap}
-                provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-                pointerEvents="none"
+                scrollEnabled={false}
                 region={{
                   latitude: lat,
                   longitude: lng,
                   latitudeDelta: 0.01,
                   longitudeDelta: 0.01,
                 }}
-              >
-                <Marker coordinate={{ latitude: lat, longitude: lng }} />
-              </MapView>
+                pins={[{ id: desafio.id, latitude: lat, longitude: lng }]}
+              />
             ) : null}
           </View>
 

@@ -1,4 +1,5 @@
-import { Linking } from "react-native";
+import { Linking, Platform } from "react-native";
+import { pagoEnComputadora } from "./pago-canal";
 import {
   mensajeErrorEquipo,
   rpcAbrirBuscaGente,
@@ -153,11 +154,29 @@ export async function cotizarReserva(turnoId: string, tipo: "sena" | "total") {
   };
 }
 
+export type PagoIniciado =
+  | { ok: true; reservaId: string }
+  | { ok: true; canal: "app" }
+  | { ok: true; canal: "qr"; initPoint: string; holdId: string }
+  | { ok: false; error: string };
+
+async function seguirAMercadoPago(holdId: string, initPoint: string): Promise<PagoIniciado> {
+  if (pagoEnComputadora()) {
+    return { ok: true, canal: "qr", initPoint, holdId };
+  }
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    window.location.assign(initPoint);
+  } else {
+    await Linking.openURL(initPoint);
+  }
+  return { ok: true, canal: "app" };
+}
+
 export async function pagarReserva(
   turnoId: string,
   tipo: "sena" | "total",
   accessToken: string
-): Promise<{ ok: true; reservaId?: string } | { ok: false; error: string }> {
+): Promise<PagoIniciado> {
   const start = await rpcIniciarCheckoutReserva(supabase, turnoId, tipo, true);
   if (!start.ok) return { ok: false, error: err(start.error) };
   const holdId = str(start.hold_id);
@@ -183,8 +202,7 @@ export async function pagarReserva(
   if (!r.ok || !body?.init_point) {
     return { ok: false, error: body?.error ?? "No se pudo abrir Mercado Pago." };
   }
-  await Linking.openURL(body.init_point);
-  return { ok: true };
+  return seguirAMercadoPago(holdId, body.init_point);
 }
 
 export async function listarMisReservas(): Promise<{ data: ReservaMia[]; error: string | null }> {
@@ -264,7 +282,7 @@ export async function pagarEnlacePago(
   token: string,
   tipo: "sena" | "total",
   accessToken: string
-): Promise<{ ok: true; reservaId?: string } | { ok: false; error: string }> {
+): Promise<PagoIniciado> {
   const start = await rpcIniciarCheckoutEnlace(supabase, token, tipo, true);
   if (!start.ok) return { ok: false, error: err(start.error) };
   const holdId = str(start.hold_id);
@@ -288,8 +306,7 @@ export async function pagarEnlacePago(
   if (!r.ok || !body?.init_point) {
     return { ok: false, error: body?.error ?? "No se pudo abrir Mercado Pago." };
   }
-  await Linking.openURL(body.init_point);
-  return { ok: true };
+  return seguirAMercadoPago(holdId, body.init_point);
 }
 
 export async function guardarListaReserva(reservaId: string, nombres: string[]) {

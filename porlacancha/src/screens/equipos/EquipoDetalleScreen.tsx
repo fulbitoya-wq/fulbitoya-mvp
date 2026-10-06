@@ -3,7 +3,6 @@ import {
   Image,
   Pressable,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -23,6 +22,7 @@ import {
 } from "@shared/equipos";
 import { firstZodError } from "@shared/validation/auth";
 import { useAuth } from "../../auth/AuthProvider";
+import { compartirTexto } from "../../lib/share-text";
 import {
   getEquipoDetalle,
   listSolicitudesEntrada,
@@ -87,7 +87,7 @@ export function EquipoDetalleScreen({ equipoId, onBack, onLeft, onBuscarJugadore
   const compartirEnlace = async () => {
     if (!enlace) return;
     const url = enlaceCompartirEquipo(enlace, process.env.EXPO_PUBLIC_WEB_URL);
-    await Share.share({ message: `Sumate a ${nombre} en PorLaCancha: ${url}` });
+    await compartirTexto(`Sumate a ${nombre} en PorLaCancha: ${url}`);
   };
 
   const invitar = async () => {

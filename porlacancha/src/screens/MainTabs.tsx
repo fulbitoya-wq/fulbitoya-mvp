@@ -23,7 +23,7 @@ import {
   type PendingAction,
 } from "../lib/pending-action";
 import { supabase } from "../lib/supabase";
-import { mensajeErrorEquipo, rpcResponderSolicitud } from "@shared/equipos";
+import { mensajeErrorEquipo, rpcPredioPublico, rpcResponderSolicitud } from "@shared/equipos";
 import { listarMisReservas } from "../lib/reserva";
 import { IconBtn, showNotice } from "../ui";
 import { PorLaCanchaBottomTabBar } from "../ui/PorLaCanchaBottomTabBar";
@@ -280,6 +280,7 @@ export function MainTabs({ onRequestAuth }: Props) {
     const go = async () => {
       const action = await peekPendingAction();
       if (cancelled || !action || action.kind === "join_token" || action.kind === "claim_reserva") return;
+      if (action.kind === "open_desafio" || action.kind === "open_predio") return;
       if (action.kind === "inscribir" && teamsLoading) return;
       if (action.kind !== "open_inbox" && action.kind !== "favorite" && !profileReadyForActions(profile)) return;
       const key = JSON.stringify(action);
@@ -341,6 +342,39 @@ export function MainTabs({ onRequestAuth }: Props) {
       cancelled = true;
     };
   }, [loggedIn, profile, loading, teamsLoading, items, refreshTeams, equipos]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const openLaunch = async () => {
+      const action = await peekPendingAction();
+      if (cancelled || !action) return;
+      if (action.kind !== "open_desafio" && action.kind !== "open_predio") return;
+      const key = JSON.stringify(action);
+      if (resumedKey.current === key) return;
+      resumedKey.current = key;
+      await clearPendingAction();
+      if (action.kind === "open_desafio") {
+        const d = await getDesafioPorId(action.desafioId);
+        if (cancelled || !d) return;
+        setTab("explore");
+        setExploreView("partidos");
+        setSelectedId(d.id);
+        setDetalle(d);
+        return;
+      }
+      const predio = await rpcPredioPublico(supabase, action.slug);
+      if (cancelled || !predio.ok) return;
+      const canchaId = typeof predio.id === "string" ? predio.id : "";
+      if (!canchaId) return;
+      setTab("explore");
+      setExploreView("reservar");
+      setReservePrefill({ canchaId });
+    };
+    void openLaunch();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const crearPartido = () => {
     setPlusOpen(true);

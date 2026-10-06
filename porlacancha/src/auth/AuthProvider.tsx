@@ -13,6 +13,7 @@ import * as Linking from "expo-linking";
 import { handleAuthCallbackUrl } from "../lib/auth-deep-link";
 import { rememberClaimTokenFromUrl } from "../lib/claim-token";
 import { rememberJoinTokenFromUrl } from "../lib/join-token";
+import { rememberLaunchFromUrl } from "../lib/web-launch";
 import { supabase } from "../lib/supabase";
 
 export type JugateLaProfile = {
@@ -110,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const initial = await Linking.getInitialURL();
       await rememberJoinTokenFromUrl(initial);
       await rememberClaimTokenFromUrl(initial);
+      await rememberLaunchFromUrl(initial);
       await handleAuthCallbackUrl(initial);
       const {
         data: { session: current },
@@ -144,6 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const linkSub = Linking.addEventListener("url", ({ url }) => {
       rememberJoinTokenFromUrl(url);
       rememberClaimTokenFromUrl(url);
+      rememberLaunchFromUrl(url);
       handleAuthCallbackUrl(url);
     });
 

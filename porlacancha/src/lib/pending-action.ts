@@ -14,7 +14,9 @@ export type PendingAction =
   | { kind: "favorite"; jugadorId: string }
   | { kind: "reservar"; canchaId?: string; turnoId?: string }
   | { kind: "crear_partido" }
-  | { kind: "lista_reserva"; reservaId: string };
+  | { kind: "lista_reserva"; reservaId: string }
+  | { kind: "open_desafio"; desafioId: string }
+  | { kind: "open_predio"; slug: string };
 
 export function profileNeedsUsername(_profile: JugateLaProfile | null): boolean {
   return false;
