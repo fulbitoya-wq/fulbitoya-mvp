@@ -110,9 +110,9 @@ export function CampoForm({
         id = res.data.id;
       }
       const fr = await reemplazarFranjas(id!, franjas);
-      if (!fr.ok) throw new Error(fr.error);
+      if (!fr.ok) throw new Error(fr.error ?? "No se pudieron guardar las franjas.");
       const gen = await regenerarTurnosCampo(id!);
-      if (!gen.ok) throw new Error(gen.error);
+      if (!gen.ok) throw new Error(gen.error ?? "No se pudieron armar los turnos.");
       router.push(`/dashboard/canchas/${canchaId}/campos`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo guardar.");
