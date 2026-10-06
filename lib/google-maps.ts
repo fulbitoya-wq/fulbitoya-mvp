@@ -81,21 +81,40 @@ export function loadGoogleMaps(): Promise<typeof google> {
   return loader;
 }
 
-export async function loadGooglePlaces(): Promise<{
-  PlaceAutocompleteElement: new (opts?: Record<string, unknown>) => HTMLElement & { value?: string };
-}> {
+type PlacesLib = {
+  AutocompleteSuggestion?: {
+    fetchAutocompleteSuggestions: (req: Record<string, unknown>) => Promise<{
+      suggestions: Array<{ placePrediction?: PlacePrediction }>;
+    }>;
+  };
+  AutocompleteSessionToken?: new () => unknown;
+};
+
+export type PlacePrediction = {
+  text?: { toString: () => string } | string;
+  toPlace: () => PlaceNew;
+};
+
+export type PlaceNew = {
+  fetchFields: (opts: { fields: string[] }) => Promise<void>;
+  location?: { lat: (() => number) | number; lng: (() => number) | number; toJSON?: () => { lat: number; lng: number } } | null;
+  formattedAddress?: string;
+  displayName?: string | { text?: string };
+  id?: string;
+  addressComponents?: Array<{ longText?: string; long_name?: string; types: string[] }>;
+};
+
+export async function loadGooglePlacesLib(): Promise<PlacesLib> {
   await loadGoogleMaps();
   const maps = mapsNs();
   if (!maps?.importLibrary) {
     throw new Error("No se pudo cargar Google Maps.");
   }
-  const places = (await maps.importLibrary("places")) as {
-    PlaceAutocompleteElement?: new (opts?: Record<string, unknown>) => HTMLElement & { value?: string };
-  };
-  if (!places.PlaceAutocompleteElement) {
+  const places = (await maps.importLibrary("places")) as PlacesLib;
+  if (!places.AutocompleteSuggestion?.fetchAutocompleteSuggestions) {
     throw new Error("Falta Places API (New) en la key de Google.");
   }
-  return { PlaceAutocompleteElement: places.PlaceAutocompleteElement };
+  return places;
 }
 
 export function formatPremioArs(value: number): string {
