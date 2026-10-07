@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Next.js
+.next/
+**/.next/
+out/
+
+# Expo
+.expo/
+**/.expo/
+dist/
+**/dist/
+
+# Build / output
+build/
+**/build/
+coverage/
+**/.turbo/
+.vercel/
+**/.vercel/
+
+# TypeScript / caches
+*.tsbuildinfo
+.cache/
+**/.cache/
+
+# Native / generated (if present)
+ios/Pods/
+android/.gradle/
+android/app/build/
+android/build/
+
+# Misc noise
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.DS_Store
